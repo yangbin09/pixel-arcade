@@ -1,0 +1,745 @@
+/* ============================================================
+   PIXEL ARCADE · PLAY · 游戏页外壳 / HUD / 画面 / 弹窗
+   由旧 assets/style.css 按原有分节拆出，样式值未改动。
+   ============================================================ */
+
+/* ============================================================
+   打地鼠 · 游戏页
+   ============================================================ */
+
+.page-play {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.play-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 528px;
+  margin: auto;
+  padding:
+    max(12px, env(safe-area-inset-top, 0px))
+    var(--gutter-play)
+    max(18px, env(safe-area-inset-bottom, 0px));
+  animation: cabinet-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.play-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.play-title {
+  min-width: 0;
+  text-align: center;
+}
+
+.play-title h1 {
+  color: var(--c-cream);
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.play-title p {
+  margin-top: 1px;
+  color: var(--c-purple);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.play-topbar > .icon-btn {
+  justify-self: start;
+}
+
+.play-actions {
+  display: flex;
+  justify-self: end;
+  gap: 8px;
+}
+
+.icon-btn {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 2px solid var(--c-line-hi);
+  background: var(--c-panel);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+  transition:
+    transform 0.1s steps(2, end),
+    border-color 0.1s linear,
+    background-color 0.1s linear;
+}
+
+.icon-btn:hover:not(:disabled) {
+  border-color: var(--c-amber);
+  background: var(--c-panel-2);
+  transform: translateY(-1px);
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.icon-btn:disabled {
+  opacity: 0.34;
+}
+
+.icon-btn .icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* ---------- HUD ---------- */
+
+.hud {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  margin-top: 12px;
+  border: 2px solid var(--c-line);
+  background: rgba(13, 11, 22, 0.86);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.stat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 7px 10px 8px;
+}
+
+.stat + .stat {
+  border-left: 2px solid var(--c-line);
+}
+
+.stat-score {
+  min-width: 118px;
+  align-items: center;
+  text-align: center;
+}
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--c-muted);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  flex: none;
+  background: var(--c-amber);
+}
+
+.dot--time {
+  background: var(--c-cream);
+}
+
+.dot--score {
+  background: var(--c-gold);
+}
+
+.dot--combo {
+  background: var(--c-mint);
+}
+
+.stat canvas {
+  margin-top: 4px;
+}
+
+.stat-score canvas {
+  margin-inline: auto;
+}
+
+.combo-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 21px;
+  margin-top: 4px;
+}
+
+.combo-line canvas {
+  margin-top: 0;
+}
+
+.combo-mult {
+  color: var(--c-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  transition: color 0.15s linear;
+}
+
+.hud.is-urgent {
+  border-color: var(--c-red-deep);
+}
+
+.hud.is-urgent .dot--time {
+  background: var(--c-red);
+  animation: blink 0.55s steps(2, end) infinite;
+}
+
+.stat.is-bump {
+  animation: stat-flash 0.22s steps(2, end);
+}
+
+.stat.is-broken {
+  animation: stat-broken 0.32s steps(2, end);
+}
+
+.combo-mult.is-hot {
+  color: var(--c-gold);
+}
+
+.combo-mult.is-max {
+  color: var(--c-mint);
+}
+
+/* ---------- 计时条 ---------- */
+
+.timer {
+  height: 9px;
+  margin-top: 7px;
+  padding: 1px;
+  border: 2px solid var(--c-line);
+  background: var(--c-night);
+}
+
+.timer i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--c-amber) 0 6px,
+    transparent 6px 8px
+  );
+  transition: background-color 0.2s linear;
+}
+
+.timer.is-low i {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--c-orange) 0 6px,
+    transparent 6px 8px
+  );
+}
+
+.timer.is-critical {
+  border-color: var(--c-red-deep);
+}
+
+.timer.is-critical i {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--c-red) 0 6px,
+    transparent 6px 8px
+  );
+  animation: bar-pulse 0.5s steps(2, end) infinite;
+}
+
+/* ---------- 游戏画面 ---------- */
+
+.screen {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin-top: 12px;
+  overflow: hidden;
+  background-color: var(--c-night);
+  background-image:
+    linear-gradient(45deg, rgba(74, 60, 104, 0.08) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(74, 60, 104, 0.08) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(74, 60, 104, 0.08) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(74, 60, 104, 0.08) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+  box-shadow:
+    0 0 0 2px var(--c-void),
+    0 0 0 4px var(--c-line-hi),
+    0 8px 0 4px rgba(0, 0, 0, 0.36);
+  touch-action: manipulation;
+}
+
+#field {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.page-play[data-game-state="playing"] #field {
+  cursor: crosshair;
+}
+
+.page-play[data-game-state="playing"] #field.has-hammer {
+  cursor: none;
+}
+
+/* 键盘敲击时，让画布自身不会出现浏览器焦点框；用外框高亮代替 */
+.page-play[data-game-state="playing"] #field:focus-visible {
+  outline: none;
+}
+
+.overlay:focus {
+  outline: none;
+}
+
+.toast {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+  padding: 4px 8px;
+  border: 1px solid var(--c-amber);
+  background: rgba(7, 6, 12, 0.9);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+  color: var(--c-gold);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  text-align: center;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.toast.is-warn {
+  border-color: var(--c-red);
+  color: var(--c-red);
+}
+
+.toast.is-show {
+  animation: toast-in 1s steps(6, end) both;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  overflow: auto;
+  place-items: center;
+  padding: clamp(10px, 3.2vw, 18px);
+  background-color: rgba(7, 6, 12, 0.78);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 248, 232, 0.022) 0,
+    rgba(255, 248, 232, 0.022) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  animation: fade-in 0.16s linear both;
+}
+
+.overlay[hidden],
+.dialog[hidden] {
+  display: none;
+}
+
+.dialog {
+  position: relative;
+  width: min(100%, 306px);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: clamp(14px, 4vw, 20px) clamp(13px, 4vw, 18px);
+  border: 2px solid var(--c-cream);
+  background: var(--c-panel);
+  box-shadow:
+    0 0 0 2px var(--c-void),
+    7px 7px 0 rgba(0, 0, 0, 0.48);
+  text-align: center;
+  overscroll-behavior: contain;
+  animation: dialog-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.dialog::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--c-amber) 0 10px,
+    transparent 10px 14px
+  );
+}
+
+.dialog::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 4px;
+  height: 4px;
+  background: var(--c-line-hi);
+}
+
+.dialog-kicker {
+  color: var(--c-amber);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.dialog h2 {
+  margin-top: 5px;
+  color: var(--c-cream);
+  font-size: clamp(22px, 6.4vw, 28px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
+}
+
+.dialog-lead {
+  max-width: 30em;
+  margin: 8px auto 0;
+  color: var(--c-lav);
+  font-size: 11.5px;
+  line-height: 1.75;
+}
+
+.dialog-hint {
+  margin-top: 10px;
+  color: var(--c-purple);
+  font-size: 9px;
+  line-height: 1.7;
+}
+
+.dialog-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 2px solid var(--c-void);
+  background: var(--c-amber);
+  box-shadow:
+    0 4px 0 var(--c-dirt-deep),
+    inset 0 2px 0 rgba(255, 248, 232, 0.22);
+  color: var(--c-void);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-align: center;
+  transition:
+    transform 0.1s steps(2, end),
+    box-shadow 0.1s steps(2, end),
+    background-color 0.1s linear;
+}
+
+.btn:hover {
+  background: var(--c-gold);
+  transform: translateY(-1px);
+  box-shadow:
+    0 5px 0 var(--c-dirt-deep),
+    inset 0 2px 0 rgba(255, 248, 232, 0.25);
+}
+
+.btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 var(--c-dirt-deep),
+    inset 0 1px 0 rgba(255, 248, 232, 0.18);
+}
+
+.btn-ghost {
+  border-color: var(--c-line-hi);
+  background: transparent;
+  box-shadow: none;
+  color: var(--c-cream);
+  font-weight: 700;
+}
+
+.btn-ghost:hover {
+  border-color: var(--c-amber);
+  background: rgba(243, 168, 65, 0.08);
+  box-shadow: none;
+  color: var(--c-gold);
+  transform: none;
+}
+
+.btn-ghost:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  color: var(--c-muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-decoration: underline;
+  text-decoration-color: var(--c-line-hi);
+  text-underline-offset: 3px;
+}
+
+.btn-link:hover {
+  color: var(--c-gold);
+}
+
+.dialog .btn {
+  width: 100%;
+}
+
+.dialog .dialog-hint kbd {
+  font-size: 8px;
+}
+
+/* 结算 */
+
+.score-label {
+  margin-top: 10px;
+  color: var(--c-muted);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+}
+
+#finalScore {
+  margin: 2px auto 0;
+}
+
+.record {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 2px 7px;
+  background: var(--c-mint);
+  color: var(--c-void);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+  transform: rotate(-2deg);
+  animation: record-pop 0.35s steps(3, end) both;
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 11px 0 12px;
+  border-top: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+}
+
+.result-stats > div {
+  min-width: 0;
+  padding: 7px 3px;
+}
+
+.result-stats > div + div {
+  border-left: 1px solid var(--c-line);
+}
+
+.result-stats span {
+  display: block;
+  overflow: hidden;
+  color: var(--c-muted);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-stats b {
+  display: block;
+  margin-top: 2px;
+  color: var(--c-cream);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.result-stats > div:last-child b {
+  color: var(--c-gold);
+}
+
+.dialog-actions .btn-link {
+  margin-top: -4px;
+}
+
+/* ---------- 底部说明 ---------- */
+
+.play-notes {
+  margin-top: 15px;
+}
+
+.score-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid var(--c-line);
+  background: rgba(21, 17, 37, 0.7);
+  color: var(--c-lav);
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  line-height: 1.7;
+}
+
+.tag-normal {
+  border-color: rgba(240, 229, 202, 0.24);
+  color: var(--c-cream);
+}
+
+.tag-gold {
+  border-color: rgba(255, 211, 95, 0.35);
+  color: var(--c-gold);
+}
+
+.miss-rule {
+  margin-top: 7px;
+  color: var(--c-muted);
+  font-size: 10px;
+  line-height: 1.75;
+}
+
+.keys-hint {
+  margin-left: 5px;
+  color: var(--c-purple);
+}
+
+.keys-hint kbd {
+  font-size: 8px;
+}
+
+.play-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 13px;
+  padding-top: 9px;
+  border-top: 1px solid var(--c-line);
+  color: var(--c-purple);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  line-height: 1.6;
+}
+
+.back-link {
+  color: var(--c-lav);
+  letter-spacing: 0.03em;
+}
+
+.back-link:hover {
+  color: var(--c-gold);
+}
+
+.game-code {
+  font-size: 7.5px;
+  letter-spacing: 0.14em;
+  text-align: right;
+}
+
+/* ---------- 小屏微调 ---------- */
+
+@media (max-width: 359px) {
+  .stat {
+    padding-inline: 8px;
+  }
+
+  .stat-score {
+    min-width: 108px;
+  }
+
+  .dialog {
+    padding: 13px 11px;
+  }
+
+  .dialog h2 {
+    font-size: 21px;
+  }
+
+  .dialog-lead {
+    font-size: 10.5px;
+  }
+
+  .result-stats b {
+    font-size: 14px;
+  }
+
+  .result-stats span {
+    font-size: 7.5px;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+}
+
+@media (hover: none) {
+  .keys-hint {
+    display: none;
+  }
+
+  .play-glyph {
+    display: none;
+  }
+}
+
+@media (min-width: 700px) {
+  .play-title h1 {
+    font-size: 21px;
+  }
+
+  .play-notes {
+    margin-top: 18px;
+  }
+}

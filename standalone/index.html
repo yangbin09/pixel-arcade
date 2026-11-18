@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07060c">
+  <meta name="color-scheme" content="dark">
+  <title>小游戏合集 · PIXEL ARCADE</title>
+  <meta name="description" content="像素街机小游戏合集：离线单文件版，双击即玩，支持触屏、键盘与全屏。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2307060c'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23f3a841'/%3E%3Crect x='7' y='2' width='2' height='2' fill='%23ffd35f'/%3E%3Crect x='2' y='9' width='2' height='2' fill='%23a6d96b'/%3E%3C/svg%3E">
+  <script type="module" src="/site/standalone.ts"></script>
+</head>
+<body class="page-home">
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- ================= 首页视图 ================= -->
+  <div class="site" id="homeView">
+    <a class="skip-link" href="#catalog">跳到游戏列表</a>
+    <div class="shell">
+      <header class="masthead">
+        <div class="topline">
+          <div class="brand">
+            <canvas class="brand-mark" data-icon="joystick" data-icon-size="30" width="11" height="11" aria-hidden="true"></canvas>
+            <div class="brand-text">
+              <strong>PIXEL ARCADE</strong>
+              <span>像素街机 · 小游戏合集</span>
+            </div>
+          </div>
+          <span class="build-tag">OFFLINE</span>
+        </div>
+
+        <div class="hero">
+          <div class="hero-main">
+            <p class="kicker">MINI GAME COLLECTION / VOL. 01</p>
+            <h1><span>小游戏</span><span class="accent">合集</span><span class="caret" aria-hidden="true"></span></h1>
+            <p class="lede">没有下载，没有广告。这是离线单文件版：整个街机厅都在这一个 HTML 里，断网也能玩。</p>
+          </div>
+
+          <aside class="notice" aria-label="街机厅状态">
+            <p class="notice-head">
+              <i class="live-dot" aria-hidden="true"></i>营业中
+              <span>ARCADE OPEN</span>
+            </p>
+            <dl class="notice-stats">
+              <div><dt>可玩</dt><dd id="statOpen">00</dd></div>
+              <div><dt>建设中</dt><dd id="statSoon">10</dd></div>
+              <div><dt>单局</dt><dd id="statRound">30<span>s</span></dd></div>
+            </dl>
+            <p class="notice-foot">竖屏优先 · 触屏 / 键盘 · 全屏</p>
+          </aside>
+        </div>
+      </header>
+
+      <main id="catalog">
+        <div class="section-head">
+          <h2>全部游戏</h2>
+          <p id="catalogCount" aria-label="10 个位置">00 / 10 OPEN</p>
+        </div>
+        <ul class="game-grid" id="gameGrid"></ul>
+      </main>
+
+      <footer class="site-foot">
+        <p>全部游戏都在浏览器里运行，不联网也能玩。最高分只保存在这台设备上。</p>
+        <p class="foot-meta">PIXEL ARCADE © 2026<br>NO DOWNLOAD / NO LOGIN</p>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= 游戏视图 ================= -->
+  <a class="skip-link" href="#screen">跳到游戏画面</a>
+
+  <main class="play-wrap" id="shell" hidden>
+    <header class="play-topbar" id="topbar">
+      <a class="icon-btn" id="backLink" href="#home" aria-label="返回首页" title="返回首页">
+        <canvas class="icon" data-icon="back" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+      </a>
+
+      <div class="play-title">
+        <h1 id="gameTitle">游戏</h1>
+        <p id="gameTagline"></p>
+      </div>
+
+      <div class="play-actions">
+        <button class="icon-btn" id="muteBtn" type="button" aria-label="关闭音效" aria-pressed="false" title="音效">
+          <canvas class="icon" data-icon="sound" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+        </button>
+        <button class="icon-btn" id="pauseBtn" type="button" aria-label="暂停游戏" aria-pressed="false" title="暂停" disabled>
+          <canvas class="icon" data-icon="pause" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+        </button>
+        <button class="icon-btn" id="fsBtn" type="button" aria-label="全屏运行" aria-pressed="false" title="全屏 (F)">
+          <canvas class="icon" data-icon="fullscreen" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+        </button>
+      </div>
+    </header>
+
+    <section class="hud" id="hud" aria-label="游戏数据"></section>
+
+    <div class="timer" id="timerWrap" aria-hidden="true" hidden><i id="timeFill"></i></div>
+
+    <div class="screen" id="screen">
+      <canvas id="field" width="168" height="168" tabindex="0" aria-label="游戏画面"></canvas>
+      <canvas id="fx" width="168" height="168" aria-hidden="true"></canvas>
+      <div class="toast" id="toast" role="status" hidden></div>
+      <div class="overlay" id="overlay" tabindex="-1" hidden></div>
+    </div>
+
+    <section class="play-notes" id="notes" aria-label="玩法说明"></section>
+  </main>
+</body>
+</html>

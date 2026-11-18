@@ -1,0 +1,165 @@
+/* ============================================================
+   PIXEL ARCADE · MOTION · 关键帧 / 减少动效
+   由旧 assets/style.css 按原有分节拆出，样式值未改动。
+   ============================================================ */
+
+/* ============================================================
+   动效
+   ============================================================ */
+
+@keyframes blink {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0.28;
+  }
+}
+
+@keyframes caret {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  49%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cabinet-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes stat-flash {
+  0% {
+    background: transparent;
+  }
+  35% {
+    background: rgba(243, 168, 65, 0.14);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+@keyframes stat-broken {
+  0% {
+    background: transparent;
+  }
+  30% {
+    background: rgba(217, 82, 63, 0.22);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+@keyframes bar-pulse {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  78% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -7px);
+  }
+}
+
+@keyframes record-pop {
+  from {
+    opacity: 0;
+    transform: rotate(-2deg) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-2deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .game-card {
+    opacity: 1;
+    transform: none;
+  }
+}

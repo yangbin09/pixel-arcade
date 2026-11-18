@@ -1,0 +1,36 @@
+{
+  "name": "pixel-arcade",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PIXEL ARCADE · 像素街机小游戏合集（多模块 + 可编译 + Docker）",
+  "workspaces": [
+    "packages/*",
+    "games/*"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run typecheck && vite build && node scripts/precompress.mjs",
+    "build:standalone": "npm run typecheck && vite build --config vite.standalone.config.ts && node scripts/flatten-standalone.mjs",
+    "build:all": "npm run build && npm run build:standalone",
+    "preview": "vite preview --port 4173",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:games": "node scripts/check-games.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "docker:build": "docker build -t pixel-arcade:latest .",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "5.9.3",
+    "vite": "7.3.8",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "3.2.7"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

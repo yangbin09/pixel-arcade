@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07060c">
+  <meta name="color-scheme" content="dark">
+  <title>游戏 · PIXEL ARCADE</title>
+  <meta name="description" content="像素街机小游戏：点开就玩，支持触屏、键盘与全屏。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2307060c'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23f3a841'/%3E%3Crect x='7' y='2' width='2' height='2' fill='%23ffd35f'/%3E%3Crect x='2' y='9' width='2' height='2' fill='%23a6d96b'/%3E%3C/svg%3E">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PIXEL ARCADE">
+  <script type="module" src="/site/play.ts"></script>
+</head>
+<body class="page-play" data-game-state="ready">
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <a class="skip-link" href="#screen">跳到游戏画面</a>
+
+  <main class="play-wrap" id="shell">
+    <header class="play-topbar" id="topbar">
+      <a class="icon-btn" id="backLink" href="../index.html" aria-label="返回首页" title="返回首页">
+        <canvas class="icon" data-icon="back" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+      </a>
+
+      <div class="play-title">
+        <h1 id="gameTitle">游戏</h1>
+        <p id="gameTagline"></p>
+      </div>
+
+      <div class="play-actions">
+        <button class="icon-btn" id="muteBtn" type="button" aria-label="关闭音效" aria-pressed="false" title="音效">
+          <canvas class="icon" data-icon="sound" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+        </button>
+        <button class="icon-btn" id="pauseBtn" type="button" aria-label="暂停游戏" aria-pressed="false" title="暂停" disabled>
+          <canvas class="icon" data-icon="pause" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+        </button>
+        <button class="icon-btn" id="fsBtn" type="button" aria-label="全屏运行" aria-pressed="false" title="全屏 (F)">
+          <canvas class="icon" data-icon="fullscreen" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+        </button>
+      </div>
+    </header>
+
+    <section class="hud" id="hud" aria-label="游戏数据"></section>
+
+    <div class="timer" id="timerWrap" aria-hidden="true" hidden><i id="timeFill"></i></div>
+
+    <div class="screen" id="screen">
+      <canvas id="field" width="168" height="168" tabindex="0" aria-label="游戏画面"></canvas>
+      <canvas id="fx" width="168" height="168" aria-hidden="true"></canvas>
+
+      <div class="toast" id="toast" role="status" hidden></div>
+      <div class="overlay" id="overlay" tabindex="-1" hidden></div>
+    </div>
+
+    <section class="play-notes" id="notes" aria-label="玩法说明"></section>
+  </main>
+
+  <noscript>
+    <p style="padding:16px;color:#f0e5ca">这个小游戏需要开启 JavaScript。</p>
+  </noscript>
+</body>
+</html>

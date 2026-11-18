@@ -1,0 +1,51 @@
+/* ============================================================
+   PIXEL ARCADE · TOKENS · 调色板 / 语义色 / 字体 / 间距
+   由旧 assets/style.css 按原有分节拆出，样式值未改动。
+   ============================================================ */
+
+:root {
+  /* ---- 24 色复古调色板 ---- */
+  --c-void: #07060c;
+  --c-night: #0d0b16;
+  --c-panel: #151125;
+  --c-panel-2: #1d1830;
+  --c-line: #2c2443;
+  --c-line-hi: #4a3c68;
+  --c-purple: #6b5b8c;
+  --c-lav: #a291c4;
+  --c-cream: #f0e5ca;
+  --c-white: #fff8e8;
+  --c-amber: #f3a841;
+  --c-gold: #ffd35f;
+  --c-orange: #e17236;
+  --c-red: #d9523f;
+  --c-red-deep: #782a28;
+  --c-grass: #3c6338;
+  --c-grass-hi: #5c8947;
+  --c-grass-deep: #24402b;
+  --c-dirt: #8a5a37;
+  --c-dirt-hi: #b37e4d;
+  --c-dirt-deep: #4b2f1c;
+  --c-hole: #1b1009;
+  --c-pink: #e39b87;
+  --c-mint: #a6d96b;
+
+  /* ---- 语义颜色 ---- */
+  --bg: var(--c-void);
+  --ink: var(--c-cream);
+  --muted: var(--c-lav);
+  --dim: var(--c-purple);
+  --accent: var(--c-amber);
+  --line: var(--c-line);
+  --hard-shadow: 4px 4px 0 rgba(0, 0, 0, 0.42);
+
+  /* ---- 字体：只用系统字体，中文优先清晰 ---- */
+  --font-cn: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC",
+    "Source Han Sans SC", "Microsoft YaHei", "Microsoft JhengHei",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", "Cascadia Mono", "Consolas",
+    "Liberation Mono", "Menlo", monospace;
+
+  --gutter: clamp(16px, 4.2vw, 40px);
+  --gutter-play: clamp(10px, 2.8vw, 12px);
+}

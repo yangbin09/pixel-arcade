@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@arcade/core": ["packages/core/src/index.ts"],
+      "@arcade/ui": ["packages/ui/src/index.ts"],
+      "@arcade/registry": ["packages/registry/src/index.ts"],
+      "@styles/*": ["packages/styles/src/*"],
+      "@arcade/game-*": ["games/*/src/index.ts"]
+    }
+  },
+  "include": [
+    "packages/**/*.ts",
+    "games/**/*.ts",
+    "site/**/*.ts",
+    "tests/**/*.ts",
+    "vite.config.ts",
+    "vite.standalone.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", "dist-standalone"]
+}

@@ -1,0 +1,657 @@
+/* ============================================================
+   PIXEL ARCADE · HOME · 首页 / 卡片 / 机位
+   由旧 assets/style.css 按原有分节拆出，样式值未改动。
+   ============================================================ */
+
+/* ============================================================
+   首页
+   ============================================================ */
+
+.page-home .site {
+  position: relative;
+  z-index: 1;
+}
+
+.shell {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: clamp(18px, 3.4vw, 34px) var(--gutter)
+    calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-top: calc(clamp(18px, 3.4vw, 34px) + env(safe-area-inset-top, 0px));
+}
+
+.topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: clamp(34px, 7vw, 68px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-mark {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.4));
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.brand-text strong {
+  color: var(--c-cream);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.brand-text span {
+  color: var(--c-purple);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+}
+
+.build-tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border: 1px solid var(--c-line);
+  background: rgba(13, 11, 22, 0.52);
+  color: var(--c-lav);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+}
+
+.build-tag::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  background: var(--c-mint);
+  box-shadow: 0 0 0 3px rgba(166, 217, 107, 0.1);
+  animation: blink 2.4s steps(2, end) infinite;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 278px;
+  align-items: end;
+  gap: clamp(26px, 5vw, 64px);
+}
+
+.hero-main {
+  min-width: 0;
+  animation: fade-up 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 80ms backwards;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--c-amber);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.kicker::before {
+  content: "";
+  width: 11px;
+  height: 3px;
+  background: var(--c-amber);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.hero h1 {
+  margin-top: clamp(12px, 2vw, 20px);
+  color: var(--c-cream);
+  font-size: clamp(48px, 9.4vw, 92px);
+  font-weight: 900;
+  letter-spacing: 0.015em;
+  line-height: 0.98;
+  white-space: nowrap;
+  text-shadow:
+    0.045em 0.045em 0 var(--c-orange),
+    0.09em 0.09em 0 var(--c-dirt-deep),
+    0.13em 0.13em 0.22em rgba(0, 0, 0, 0.42);
+}
+
+.hero h1 .accent {
+  color: var(--c-gold);
+}
+
+.caret {
+  display: inline-block;
+  width: 0.1em;
+  height: 0.64em;
+  margin-left: 0.07em;
+  background: var(--c-amber);
+  box-shadow: 0.04em 0.04em 0 rgba(0, 0, 0, 0.35);
+  animation: caret 1.15s steps(2, end) infinite;
+  vertical-align: 0.02em;
+}
+
+.lede {
+  max-width: 34em;
+  margin-top: clamp(16px, 2.4vw, 24px);
+  color: var(--c-lav);
+  font-size: clamp(13px, 1.4vw, 15px);
+  line-height: 1.85;
+}
+
+.notice {
+  position: relative;
+  align-self: end;
+  padding: 16px 16px 13px;
+  border: 2px solid var(--c-line-hi);
+  background: var(--c-night);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.42);
+  transform: rotate(-1.4deg);
+  transform-origin: 50% 100%;
+  transition: transform 0.18s steps(3);
+  animation: fade-in 0.6s ease-out 220ms backwards;
+}
+
+.notice:hover {
+  transform: rotate(0deg);
+}
+
+.notice::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--c-amber) 0 12px,
+    transparent 12px 16px
+  );
+}
+
+.notice-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--c-cream);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.notice-head span {
+  margin-left: auto;
+  color: var(--c-purple);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+}
+
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--c-mint);
+  box-shadow: 0 0 0 3px rgba(166, 217, 107, 0.12);
+  animation: blink 2.4s steps(2, end) infinite;
+}
+
+.notice-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 12px 0 10px;
+  border-top: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+}
+
+.notice-stats > div {
+  padding: 8px 0;
+}
+
+.notice-stats > div + div {
+  border-left: 1px solid var(--c-line);
+  padding-left: 11px;
+}
+
+.notice-stats dt {
+  color: var(--c-muted);
+  font-size: 8px;
+  letter-spacing: 0.13em;
+  line-height: 1.4;
+}
+
+.notice-stats dd {
+  color: var(--c-gold);
+  font-family: var(--font-mono);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+}
+
+.notice-stats dd span {
+  color: var(--c-lav);
+  font-size: 9px;
+}
+
+.notice-foot {
+  color: var(--c-purple);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: clamp(40px, 6vw, 68px) 0 18px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--c-line);
+}
+
+.section-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--c-cream);
+  font-size: clamp(17px, 2vw, 21px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.section-head h2::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: var(--c-amber);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.32);
+}
+
+.section-head p {
+  flex: none;
+  color: var(--c-purple);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+/* ---------- 卡片网格 ---------- */
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 1.5vw, 18px);
+}
+
+.game-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 2px solid var(--c-line);
+  background: var(--c-panel);
+  box-shadow: var(--hard-shadow);
+  transition:
+    transform 0.12s steps(2, end),
+    box-shadow 0.12s steps(2, end),
+    border-color 0.12s linear,
+    background-color 0.12s linear;
+  animation: card-in 0.44s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 42ms + 160ms);
+}
+
+.game-card::before,
+.game-card::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  width: 6px;
+  height: 6px;
+  background: var(--c-amber);
+  transition: opacity 0.12s linear;
+}
+
+.game-card::before {
+  top: -2px;
+  left: -2px;
+}
+
+.game-card::after {
+  right: -2px;
+  bottom: -2px;
+}
+
+.game-card--soon::before,
+.game-card--soon::after {
+  background: var(--c-line-hi);
+}
+
+.card-top {
+  position: relative;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  border-bottom: 2px solid var(--c-line);
+  background: var(--c-night);
+}
+
+.card-top canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.card-no {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 2px 5px;
+  border: 1px solid rgba(74, 60, 104, 0.7);
+  background: rgba(7, 6, 12, 0.76);
+  color: var(--c-lav);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  line-height: 1.5;
+}
+
+.chip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border: 1px solid var(--c-line-hi);
+  background: rgba(7, 6, 12, 0.82);
+  color: var(--c-lav);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+
+.chip--live {
+  border-color: var(--c-mint);
+  background: var(--c-mint);
+  color: var(--c-void);
+}
+
+.chip--live::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  background: var(--c-void);
+}
+
+.play-glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 2px solid var(--c-void);
+  background: var(--c-amber);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  transform: translate(-50%, calc(-50% + 5px));
+  transition:
+    opacity 0.14s linear,
+    transform 0.14s steps(3, end);
+}
+
+.play-glyph::before {
+  content: "";
+  width: 0;
+  height: 0;
+  margin-left: 3px;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 11px solid var(--c-void);
+}
+
+.card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+}
+
+.card-body h3 {
+  color: var(--c-cream);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+
+.card-body > p {
+  margin-top: 3px;
+  color: var(--c-muted);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 9px;
+  border-top: 1px dashed var(--c-line);
+}
+
+.best {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  color: var(--c-purple);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.best b {
+  color: var(--c-gold);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.go {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--c-amber);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  transition: transform 0.12s steps(2, end);
+}
+
+.game-card--open:hover .go {
+  transform: translateX(3px);
+}
+
+.game-card--open:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.42);
+  border-color: var(--c-amber);
+}
+
+.game-card--soon {
+  border-style: dashed;
+  border-color: #2a2340;
+  background: #100d1b;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.26);
+}
+
+.game-card--soon .card-top {
+  border-bottom-color: #241d36;
+}
+
+.game-card--soon .card-top canvas {
+  opacity: 0.46;
+  filter: saturate(0.55);
+}
+
+.game-card--soon .card-body h3 {
+  color: var(--c-lav);
+  font-weight: 700;
+}
+
+.game-card--soon .card-body > p {
+  color: var(--c-purple);
+}
+
+.game-card--soon .card-foot {
+  border-top-color: #241d36;
+}
+
+.soon-label {
+  color: var(--c-purple);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.site-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: clamp(40px, 6vw, 68px);
+  padding-top: 20px;
+  border-top: 2px solid var(--c-line);
+  color: var(--c-muted);
+  font-size: 10.5px;
+  line-height: 1.8;
+}
+
+.site-foot p {
+  max-width: 46ch;
+}
+
+.site-foot .foot-meta {
+  flex: none;
+  text-align: right;
+  color: var(--c-purple);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  line-height: 1.9;
+}
+
+/* 悬停只给真正可点的卡片 */
+@media (hover: hover) {
+  .game-card--open:hover {
+    border-color: var(--c-amber);
+    background: var(--c-panel-2);
+    box-shadow: 6px 7px 0 rgba(0, 0, 0, 0.46);
+    transform: translate(-2px, -2px);
+  }
+
+  .game-card--open:hover .card-top canvas {
+    filter: brightness(1.06) saturate(1.05);
+  }
+
+  .game-card--open:hover .play-glyph {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  .game-card--open:hover::before,
+  .game-card--open:hover::after {
+    background: var(--c-gold);
+  }
+}
+
+@media (min-width: 520px) {
+  .game-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 760px) {
+  .game-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1040px) {
+  .game-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .notice {
+    width: 100%;
+    max-width: 420px;
+    transform: none;
+    animation: fade-in 0.5s ease-out 200ms backwards;
+  }
+
+  .notice:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .topline {
+    padding-bottom: 34px;
+  }
+
+  .hero h1 {
+    letter-spacing: 0.01em;
+  }
+
+  .section-head {
+    align-items: center;
+  }
+
+  .site-foot {
+    display: block;
+  }
+
+  .site-foot .foot-meta {
+    margin-top: 12px;
+    text-align: left;
+  }
+}
