@@ -186,10 +186,10 @@ const game = defineGame({
       strokeRect(c, 2, 2, W - 4, H - 4, P.line);
 
       // 四角小铆钉，让底板像一块街机面板。
-      rect(c, 4, 4, 2, 2, P.lineHi);
-      rect(c, W - 6, 4, 2, 2, P.lineHi);
-      rect(c, 4, H - 6, 2, 2, P.lineHi);
-      rect(c, W - 6, H - 6, 2, 2, P.lineHi);
+      rect(c, 3, 3, 2, 2, P.lineHi);
+      rect(c, W - 5, 3, 2, 2, P.lineHi);
+      rect(c, 3, H - 5, 2, 2, P.lineHi);
+      rect(c, W - 5, H - 5, 2, 2, P.lineHi);
 
       for (let row = 0; row < SIZE; row += 1) {
         for (let col = 0; col < SIZE; col += 1) {

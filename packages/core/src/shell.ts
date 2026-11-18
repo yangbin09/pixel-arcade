@@ -12,7 +12,7 @@ import { Sound } from "./audio";
 import { Store } from "./store";
 import { must, isInteractiveTarget, rafThrottle } from "./dom";
 import { createLiveRegion } from "./a11y";
-import { drawPixelText } from "./render/font";
+import { drawCountdownOverlay } from "./ui/countdown";
 import { paintAllIcons } from "./render/icons";
 import { clamp, isCoarsePointer, prefersReducedMotion } from "./util";
 
@@ -354,7 +354,7 @@ export class PlayShell {
       const second = Math.max(0, Math.ceil(this.cdRemaining / 1000));
       if (second !== this.cdSecond) {
         this.cdSecond = second;
-        if (second > 0) Sound.tick(4 - second);
+        if (second > 0) Sound.tick(second);
       }
       if (this.cdRemaining <= 0) {
         this.setState("playing");
@@ -379,15 +379,7 @@ export class PlayShell {
     const ctx = this.fxSurface.ctx;
     const { w, h } = this.meta.size;
     ctx.clearRect(0, 0, w, h);
-    const total = COUNTDOWN_MS;
-    const elapsed = total - this.cdRemaining;
-    const second = Math.max(1, Math.ceil(this.cdRemaining / 1000));
-    const into = (elapsed % 1000) / 1000;
-    const size = 16 + Math.round((1 - into) * 6);
-    const label = String(second);
-    const width = label.length * 6 * size - size;
-    drawPixelText(ctx, label, (w - width) / 2, (h - 7 * size) / 2 - 4, size, P.gold, P.orange);
-    drawPixelText(ctx, "READY", w / 2 - 34, (h + 7 * size) / 2 + 8, 2, P.lav, P.void);
+    drawCountdownOverlay(ctx, w, h, this.cdRemaining, COUNTDOWN_MS);
   }
 
   private clearFx(): void {

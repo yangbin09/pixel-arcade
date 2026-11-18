@@ -355,15 +355,12 @@ const game = defineGame({
       const t = playing ? clamp(acc / tickMs, 0, 1) : 0;
       const pending = queue[0] ?? dir;
       const ahead = nextHead(head, pending);
-      const growing = playing && sameCell(ahead, fruit);
 
       for (let i = snake.length - 1; i >= 1; i -= 1) {
         const from = snake[i]!;
         const to = snake[i - 1]!;
-        // 下一格就吃到果实时，身体先不收缩：蛇从头部“长”出去
-        const follow = growing ? 0 : t;
-        const x = PAD + (from.x + (to.x - from.x) * follow) * CELL;
-        const y = PAD + (from.y + (to.y - from.y) * follow) * CELL;
+        const x = PAD + (from.x + (to.x - from.x) * t) * CELL;
+        const y = PAD + (from.y + (to.y - from.y) * t) * CELL;
         drawSnakeSegment(c, x, y, i === snake.length - 1 ? "tail" : "body", i);
       }
 

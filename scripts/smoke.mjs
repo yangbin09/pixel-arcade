@@ -146,13 +146,15 @@ try {
   await client.send("Page.enable");
   await client.send("Runtime.enable");
   await client.send("Log.enable");
+  const [viewW, viewH] = (process.env.VIEWPORT ?? "390x844").split("x").map(Number);
+  const isMobile = (viewW ?? 390) < 600;
   await client.send("Emulation.setDeviceMetricsOverride", {
-    width: 390,
-    height: 844,
-    deviceScaleFactor: 2,
-    mobile: true,
+    width: viewW ?? 390,
+    height: viewH ?? 844,
+    deviceScaleFactor: isMobile ? 2 : 1,
+    mobile: isMobile,
   });
-  await client.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+  await client.send("Emulation.setTouchEmulationEnabled", { enabled: isMobile, maxTouchPoints: 5 });
 
   const errors = [];
   client.on("Runtime.consoleAPICalled", (params) => {
@@ -241,31 +243,63 @@ try {
         return { clicked: true };
       })()`,
     );
-    await sleep(1400);
 
-    const playing = await evaluate(
+    // 开始后先截一张倒计时（如果这个游戏有壳层倒计时）
+    await sleep(500);
+    await shoot(`${id}-countdown`);
+
+    // 等倒计时结束（最多 6 秒），游戏真正进入 playing 再截图
+    let playing = { state: "unknown", overlayHidden: false, hud: [], hasErrorPanel: false };
+    for (let i = 0; i < 20; i += 1) {
+      await sleep(300);
+      playing = await evaluate(
+        client,
+        `(() => ({
+          state: document.body.dataset.gameState,
+          overlayHidden: document.querySelector('#overlay').hidden,
+          hud: [...document.querySelectorAll('.stat')].map((st) => st.querySelector('canvas')?.getAttribute('aria-label')),
+          hasErrorPanel: !document.querySelector('[data-panel="result"]')?.hidden,
+        }))()`,
+      );
+      if (playing.state === "playing" || playing.state === "over") break;
+    }
+
+    await shoot(`${id}-play`);
+
+    // 暂停 / 恢复：验证壳层状态机对每个游戏都成立
+    await evaluate(client, `document.querySelector('#pauseBtn').click()`);
+    await sleep(350);
+    const paused = await evaluate(
+      client,
+      `(() => ({
+        state: document.body.dataset.gameState,
+        overlayVisible: !document.querySelector('#overlay').hidden,
+        pausePanelVisible: !document.querySelector('[data-panel="pause"]').hidden,
+      }))()`,
+    );
+    await shoot(`${id}-pause`);
+    await evaluate(client, `document.querySelector('[data-action="resume"]').click()`);
+    await sleep(350);
+    const resumed = await evaluate(
       client,
       `(() => ({
         state: document.body.dataset.gameState,
         overlayHidden: document.querySelector('#overlay').hidden,
-        hud: [...document.querySelectorAll('.stat')].map((st) => st.querySelector('canvas')?.getAttribute('aria-label')),
-        fpsSample: performance.now(),
-        hasErrorPanel: !document.querySelector('[data-panel="result"]')?.hidden,
       }))()`,
     );
-
-    await shoot(`${id}-play`);
 
     report.push({
       game: id,
       ready,
       started: started.clicked,
       playing,
+      paused,
+      resumed,
       errors: [...errors],
     });
 
     console.log(
-      `${id.padEnd(9)} state=${ready.state}->${playing.state} canvas=${ready.field.backing} css=${ready.field.w}x${ready.field.h} hud=${ready.hud.map((h) => h.aria).join("|")} errors=${errors.length}`,
+      `${id.padEnd(9)} state=${ready.state}->${playing.state} pause=${paused.state}/${paused.pausePanelVisible} resume=${resumed.state} canvas=${ready.field.backing} css=${ready.field.w}x${ready.field.h} hud=${ready.hud.map((h) => h.aria).join("|")} errors=${errors.length}`,
     );
   }
 

@@ -122,7 +122,7 @@ export function mountHome(options: HomeViewOptions): HomeView {
     const statRound = root.querySelector("#statRound");
     if (statRound) {
       const hasMinutes = metas.some((meta) => /分钟|min/i.test(meta.duration));
-      statRound.innerHTML = hasMinutes ? "30<span>s–3m</span>" : "30<span>s</span>";
+      statRound.innerHTML = hasMinutes ? '30<span>s+</span>' : '30<span>s</span>';
     }
 
     startIdle();
