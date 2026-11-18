@@ -9,6 +9,10 @@ updates:
       time: "06:00"
       timezone: Asia/Shanghai
     open-pull-requests-limit: 5
+    ignore:
+      # 大版本升级（TypeScript 7 / Vite 8 / Vitest 5 这类）需要单独迁移配置，不自动提 PR
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         patterns: ["*"]
