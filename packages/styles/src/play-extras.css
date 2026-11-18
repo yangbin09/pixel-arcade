@@ -1,6 +1,6 @@
 /* ============================================================
    PLAY EXTRAS · 多游戏通用扩展
-   只新增：全屏/沉浸、画布比例、HUD 栏数、结算条数。
+   只新增：手动全屏、画布比例、HUD 栏数、结算条数。
    旧有的颜色、间距、阴影值一律不改。
    ============================================================ */
 
@@ -65,30 +65,6 @@
   color: var(--c-gold);
 }
 
-/* ---------- 顶栏自动隐藏（仅全屏时由脚本加类） ---------- */
-
-.play-topbar {
-  max-height: 120px;
-  transition:
-    opacity 0.18s linear,
-    transform 0.18s steps(3, end),
-    max-height 0.2s steps(4, end),
-    padding 0.2s steps(4, end),
-    margin 0.2s steps(4, end);
-}
-
-.is-chrome-hidden .play-topbar {
-  max-height: 0;
-  min-height: 0;
-  margin: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-8px);
-  pointer-events: none;
-}
-
 /* ---------- 顶栏标题防溢出 ---------- */
 
 /* 原版中间是 auto（按内容撑开），三个按钮时会把标题挤出屏幕；
@@ -107,13 +83,13 @@
   text-overflow: ellipsis;
 }
 
-/* ---------- 全屏 / 沉浸模式 ---------- */
+/* ---------- 页面与手动全屏 ---------- */
 
 .page-play {
   overscroll-behavior: none;
 }
 
-/* 原生全屏：整个播放壳撑满，画布吃掉剩余高度 */
+/* 手动全屏（浏览器 F11）：整个播放壳撑满，画布吃掉剩余高度 */
 .page-play:fullscreen {
   height: 100dvh;
   min-height: 100dvh;
@@ -143,8 +119,7 @@
 }
 
 /* 全屏时画布自己带机台边框，画面像悬在暗房里 */
-.page-play:fullscreen #field,
-body.page-play.is-immersive #field {
+.page-play:fullscreen #field {
   background-color: var(--c-night);
   box-shadow:
     0 0 0 2px var(--c-void),
@@ -158,38 +133,6 @@ body.page-play.is-immersive #field {
 
 .page-play:fullscreen .dialog {
   max-height: calc(100dvh - 20px);
-}
-
-/* 沉浸回退（iPhone Safari 等没有元素全屏的设备） */
-body.page-play.is-immersive {
-  height: 100dvh;
-  min-height: 100dvh;
-  overflow: hidden;
-}
-
-body.page-play.is-immersive .play-wrap {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 700px;
-  height: 100dvh;
-  margin: 0 auto;
-  padding-top: max(4px, env(safe-area-inset-top, 0px));
-  padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
-}
-
-body.page-play.is-immersive .screen {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  margin-top: 6px;
-  aspect-ratio: auto;
-  background: transparent;
-  box-shadow: none;
-}
-
-body.page-play.is-immersive .play-notes {
-  display: none;
 }
 
 /* 全屏时鼠标形状：可敲击的区域给十字准星 */

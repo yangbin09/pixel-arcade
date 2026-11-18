@@ -2,7 +2,7 @@
   "id": "./",
   "name": "PIXEL ARCADE · 像素街机小游戏合集",
   "short_name": "PIXEL ARCADE",
-  "description": "十款像素小游戏，点开就玩，支持全屏与离线。",
+  "description": "十款像素小游戏，点开就玩。",
   "lang": "zh-CN",
   "dir": "ltr",
   "start_url": "./",

@@ -1,0 +1,38 @@
+version: 2
+updates:
+  # npm 依赖（TS / Vite / Vitest / ssh2 等）
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
+        dependency-type: development
+
+  # GitHub Actions 工作流依赖
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Dockerfile 基础镜像（node / nginx）
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 3

@@ -957,8 +957,8 @@
 }
 
 /* ============================================================
-   全屏 / 沉浸：机台填满视口，屏幕尽量大，手柄贴底
-   原生全屏的目标是 .play-wrap 本身（FullscreenController 传的是 #shell）
+   手动全屏（浏览器 F11）：机台填满视口，屏幕尽量大，手柄贴底。
+   应用本身不再请求全屏；这里只保证用户手动全屏时布局依然好看。
    ============================================================ */
 
 .play-wrap:fullscreen {
@@ -981,17 +981,15 @@
 }
 
 .play-wrap:fullscreen .cabinet,
-.page-play:fullscreen .cabinet,
-body.page-play.is-immersive .cabinet {
+.page-play:fullscreen .cabinet {
   flex: 1 1 auto;
   min-height: 0;
   margin-top: 6px;
 }
 
 .play-wrap:fullscreen .screen-frame,
-.page-play:fullscreen .screen-frame,
-body.page-play.is-immersive .screen-frame {
-  --console-frame-max: calc(100dvh - 240px);
+.page-play:fullscreen .screen-frame {
+  --console-frame-max: calc(100dvh - 340px);
   /* 不能简单 flex:1；比例来自 #shell 上的 --screen-ratio / --screen-w / --screen-h */
   width: min(100%, calc(var(--console-frame-max) * var(--screen-w, 1) / var(--screen-h, 1)));
   max-height: var(--console-frame-max);
@@ -1000,72 +998,19 @@ body.page-play.is-immersive .screen-frame {
   min-height: 0;
 }
 
-/* 顶栏还在的那 2.6 秒，先给顶栏留位置，避免手柄被挤出屏幕 */
-.play-wrap:fullscreen:not(.is-chrome-hidden) .screen-frame,
-.page-play:fullscreen .play-wrap:not(.is-chrome-hidden) .screen-frame,
-body.page-play.is-immersive .play-wrap:not(.is-chrome-hidden) .screen-frame {
-  --console-frame-max: calc(100dvh - 340px);
-}
-
-/* 全屏 / 沉浸时收起手柄，屏幕继续向上长 */
+/* 收起手柄时屏幕继续向上长 */
 .play-wrap:fullscreen .cabinet:has(.pad.is-collapsed) .screen-frame,
-.page-play:fullscreen .cabinet:has(.pad.is-collapsed) .screen-frame,
-body.page-play.is-immersive .cabinet:has(.pad.is-collapsed) .screen-frame {
-  --console-frame-max: calc(100dvh - 160px);
-}
-
-.play-wrap:fullscreen:not(.is-chrome-hidden) .cabinet:has(.pad.is-collapsed) .screen-frame,
-.page-play:fullscreen .play-wrap:not(.is-chrome-hidden) .cabinet:has(.pad.is-collapsed) .screen-frame,
-body.page-play.is-immersive .play-wrap:not(.is-chrome-hidden) .cabinet:has(.pad.is-collapsed) .screen-frame {
+.page-play:fullscreen .cabinet:has(.pad.is-collapsed) .screen-frame {
   --console-frame-max: calc(100dvh - 212px);
 }
 
-/* 1:2 / 竖长机位：顶栏收起后优先让屏幕吃满可用高度。
-   240px 的余量刚好给 blocks 留出 300×588 的整数缩放（frame ≥ 596）。
-   只作用于非 iOS 浏览器，iOS 的底栏 50px 由下面的规则继续兜底。 */
-body.page-play.is-immersive:not(.is-ios-browser)
-  .play-wrap.is-chrome-hidden
-  .cabinet[data-ratio="tall"]
-  .screen-frame,
-.play-wrap:fullscreen.is-chrome-hidden .cabinet[data-ratio="tall"] .screen-frame,
-.page-play:fullscreen
-  .play-wrap.is-chrome-hidden
-  .cabinet[data-ratio="tall"]
-  .screen-frame {
-  --console-frame-max: calc(100dvh - 240px);
-}
-
-/* iPhone Safari（非 PWA）的底栏是浏览器 UI，safe-area 不包含它。
-   沉浸时额外留 50px，PWA / standalone 没有 is-ios-browser，不受影响。 */
-body.page-play.is-ios-browser.is-immersive .play-wrap {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 50px);
-}
-
-body.page-play.is-ios-browser.is-immersive .screen-frame {
-  --console-frame-max: calc(100dvh - 338px - env(safe-area-inset-bottom, 0px));
-}
-
-body.page-play.is-ios-browser.is-immersive .play-wrap:not(.is-chrome-hidden) .screen-frame {
-  --console-frame-max: calc(100dvh - 390px - env(safe-area-inset-bottom, 0px));
-}
-
-body.page-play.is-ios-browser.is-immersive .cabinet:has(.pad.is-collapsed) .screen-frame {
-  --console-frame-max: calc(100dvh - 210px - env(safe-area-inset-bottom, 0px));
-}
-
-body.page-play.is-ios-browser.is-immersive .play-wrap:not(.is-chrome-hidden) .cabinet:has(.pad.is-collapsed) .screen-frame {
-  --console-frame-max: calc(100dvh - 262px - env(safe-area-inset-bottom, 0px));
-}
-
 .play-wrap:fullscreen .pad,
-.page-play:fullscreen .pad,
-body.page-play.is-immersive .pad {
+.page-play:fullscreen .pad {
   margin-top: auto;
 }
 
 .play-wrap:fullscreen .cabinet .screen,
-.page-play:fullscreen .cabinet .screen,
-body.page-play.is-immersive .cabinet .screen {
+.page-play:fullscreen .cabinet .screen {
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -1073,15 +1018,13 @@ body.page-play.is-immersive .cabinet .screen {
 }
 
 .play-wrap:fullscreen #field,
-.page-play:fullscreen #field,
-body.page-play.is-immersive #field {
+.page-play:fullscreen #field {
   background-color: transparent;
   box-shadow: none;
 }
 
-/* 全屏时桌面别把掌机拉成平板 */
-.page-play:fullscreen .play-wrap,
-body.page-play.is-immersive .play-wrap {
+/* 手动全屏时桌面别把掌机拉成平板 */
+.page-play:fullscreen .play-wrap {
   max-width: 560px;
 }
 
@@ -1113,23 +1056,8 @@ body.page-play.is-immersive .play-wrap {
   }
 
   .play-wrap:fullscreen .screen-frame,
-  .page-play:fullscreen .screen-frame,
-  body.page-play.is-immersive .screen-frame {
-    --console-frame-max: calc(100dvh - 276px);
-  }
-
-  .play-wrap:fullscreen:not(.is-chrome-hidden) .screen-frame,
-  .page-play:fullscreen .play-wrap:not(.is-chrome-hidden) .screen-frame,
-  body.page-play.is-immersive .play-wrap:not(.is-chrome-hidden) .screen-frame {
+  .page-play:fullscreen .screen-frame {
     --console-frame-max: calc(100dvh - 328px);
-  }
-
-  body.page-play.is-ios-browser.is-immersive .screen-frame {
-    --console-frame-max: calc(100dvh - 326px - env(safe-area-inset-bottom, 0px));
-  }
-
-  body.page-play.is-ios-browser.is-immersive .play-wrap:not(.is-chrome-hidden) .screen-frame {
-    --console-frame-max: calc(100dvh - 378px - env(safe-area-inset-bottom, 0px));
   }
 }
 

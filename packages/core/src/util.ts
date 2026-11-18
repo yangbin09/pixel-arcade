@@ -81,7 +81,7 @@ export function prefersReducedMotion(): boolean {
   }
 }
 
-/** 触屏优先（用于自动全屏、隐藏键盘提示）。 */
+/** 触屏优先（用于隐藏键盘提示等）。 */
 export function isCoarsePointer(): boolean {
   try {
     return window.matchMedia("(pointer: coarse)").matches;

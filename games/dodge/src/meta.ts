@@ -62,7 +62,7 @@ export const meta: GameMeta = {
   tagline: "撑过 45 秒，别被砸中",
   howto:
     "拖动飞船或按方向键移动，躲开从天而降的陨石；贴着陨石边缘擦过能加分，护盾可以挡下一次撞击，撑满 45 秒就算活下来。",
-  hint: "拖动飞船 · <kbd>方向键</kbd> / <kbd>WASD</kbd> 移动 · <kbd>空格</kbd> 暂停 · <kbd>F</kbd> 全屏",
+  hint: "拖动飞船 · <kbd>方向键</kbd> / <kbd>WASD</kbd> 移动 · <kbd>空格</kbd> 暂停",
   duration: "45 秒一局",
   tags: ["存活 +2/秒", "擦身 +15", "护盾挡一次"],
   size: { w: 168, h: 210 },

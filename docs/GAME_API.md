@@ -78,7 +78,7 @@ export default defineGame({
 
 ## 生命周期
 
-播放壳负责：HUD 容器、准备/暂停/结算面板、倒计时（默认）、最高分、全屏、静音、错误兜底。
+播放壳负责：HUD 容器、准备/暂停/结算面板、倒计时（默认）、最高分、静音、错误兜底。
 
 | 时机 | 调用 |
 |---|---|
@@ -110,7 +110,6 @@ interface GameMeta {
   scoreLabel?: string;   // 默认「本局得分」
   bestLabel?: string;    // 默认「历史最高」
   countdown?: boolean;   // 默认 true，壳层画 3-2-1
-  autoFullscreen?: boolean;         // 默认 true，触屏点开始自动全屏
   spaceAction?: "pause" | "action"; // 空格归谁，默认 pause
   pad?: PadSpec;         // 虚拟手柄布局，见下
   drawThumb(ctx, w, h, t): void;    // 80×50 逻辑像素，t 为秒
@@ -275,7 +274,6 @@ ctx.end({
 ctx.reducedMotion            // 尊重系统「减少动态效果」
 ctx.announce("文字")          // 读屏播报，节制使用
 ctx.toast.show("速度提升", { warn: true, duration: 1000 });
-ctx.fullscreen.active / enter() / exit()
 ctx.isPaused()
 ctx.color("gold")            // === P.gold
 ctx.meta

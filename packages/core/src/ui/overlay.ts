@@ -1,7 +1,7 @@
 import { P } from "../palette";
 import { PixelText } from "../render/pixel-text";
 
-export type OverlayAction = "start" | "resume" | "restart" | "replay" | "home" | "exit-fs";
+export type OverlayAction = "start" | "resume" | "restart" | "replay" | "home";
 
 export interface ReadyCopy {
   kicker: string;
@@ -89,14 +89,12 @@ export class Overlay {
         className: "dialog-actions",
         children: [
           this.button("replay", "再来一局", "btn btn-primary"),
-          this.button("exit-fs", "退出全屏", "btn btn-ghost"),
           this.link("home", "返回首页", "btn btn-ghost"),
         ],
       },
     ];
     const result = this.panel("result", resultChildren);
     (this.panels.get("result")!.querySelector('[data-role="record"]') as HTMLElement).hidden = true;
-    (this.panels.get("result")!.querySelector('[data-action="exit-fs"]') as HTMLElement).hidden = true;
 
     this.root.append(ready, pause, result);
     this.statsBox = result.querySelector('[data-role="stats"]');
@@ -182,14 +180,13 @@ export class Overlay {
   }
 
   /** 结算：分数用像素字，统计栏自适应 1–3 项。 */
-  showResult(view: ResultView, options: { canExitFullscreen: boolean }): void {
+  showResult(view: ResultView): void {
     const panel = this.panels.get("result")!;
     const kicker = panel.querySelector('[data-role="kicker"]') as HTMLElement;
     const title = panel.querySelector('[data-role="title"]') as HTMLElement;
     const scoreLabel = panel.querySelector('[data-role="scoreLabel"]') as HTMLElement;
     const record = panel.querySelector('[data-role="record"]') as HTMLElement;
     const scoreCanvas = panel.querySelector('[data-role="score"]') as HTMLCanvasElement;
-    const exitBtn = panel.querySelector('[data-action="exit-fs"]') as HTMLElement;
 
     kicker.textContent = view.kicker ?? "RESULT";
     title.textContent = view.title;
@@ -227,7 +224,6 @@ export class Overlay {
       stats.append(cell);
     }
 
-    exitBtn.hidden = !options.canExitFullscreen;
     this.show("result");
     requestAnimationFrame(() => this.scoreText?.refresh());
   }

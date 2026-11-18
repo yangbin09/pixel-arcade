@@ -1,0 +1,88 @@
+name: Deploy to Appwrite
+
+# 独立部署流水线（与 CI / VPS 发布解耦）：
+#   build（可复用构建）→ deploy（Appwrite Sites API）→ verify（线上无头 Chrome）
+# 触发：CI 在 master 成功后自动触发；也可手动 workflow_dispatch 指定任意 ref。
+# 回滚：workflow_dispatch 指定上一个可用 commit，或到 Appwrite Console 重新激活旧部署。
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref or SHA to deploy
+        required: true
+        default: master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-appwrite
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    uses: ./.github/workflows/reusable-build-site.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event.workflow_run.head_sha }}
+
+  deploy:
+    name: Deploy to Appwrite Sites
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production-appwrite
+      url: https://pixel-arcade.appwrite.network
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event.workflow_run.head_sha }}
+
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: .
+
+      - name: Deploy
+        env:
+          APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ vars.APPWRITE_PROJECT_ID }}
+          APPWRITE_SITE_ID: ${{ vars.APPWRITE_SITE_ID }}
+          APPWRITE_SITE_URL: ${{ vars.APPWRITE_SITE_URL }}
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: node scripts/ci/deploy-appwrite.mjs
+
+  verify:
+    name: Verify Appwrite site
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event.workflow_run.head_sha }}
+
+      - name: Verify in headless Chrome
+        env:
+          BASE_URL: ${{ vars.APPWRITE_SITE_URL }}
+        run: node scripts/ci/verify-live.mjs
+
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-appwrite
+          path: .artifacts/verify-live
+          if-no-files-found: ignore
+          retention-days: 7

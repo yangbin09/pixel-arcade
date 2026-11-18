@@ -6,7 +6,6 @@ import type { SwipeInput } from "./input/swipe";
 import type { Sound } from "./audio";
 import type { Store, ScoreMode } from "./store";
 import type { Hud, HudSlot } from "./ui/hud";
-import type { FullscreenController } from "./fullscreen";
 import type { Toast } from "./ui/toast";
 
 /** 虚拟手柄上的一个按键：语义动作 + 面板上的短标签。 */
@@ -62,8 +61,6 @@ export interface GameMeta {
   bestLabel?: string;
   /** 是否让壳层画 3-2-1 倒计时；打地鼠自己画，设为 false。 */
   countdown?: boolean;
-  /** 触屏设备上点「开始」自动进全屏，默认 true。 */
-  autoFullscreen?: boolean;
   /** 空格键归谁：'pause'（默认）或 'action'（游戏用）。 */
   spaceAction?: "pause" | "action";
   /** 虚拟手柄布局；不写则不显示手柄。 */
@@ -121,7 +118,6 @@ export interface GameContext {
   hud: Hud;
   toast: Toast;
   timer: TimerControl;
-  fullscreen: FullscreenController;
   reducedMotion: boolean;
   announce: (message: string) => void;
   /** 本局结束，交给壳层结算。 */

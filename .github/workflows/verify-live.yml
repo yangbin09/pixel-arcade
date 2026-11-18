@@ -1,0 +1,55 @@
+name: Verify live sites
+
+# 定时巡检两个线上目标（互相独立，任一失败只影响自己的 job）。
+# 默认每天 03:17 UTC（北京时间 11:17）跑一次，也可以手动触发。
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-live
+  cancel-in-progress: false
+
+jobs:
+  appwrite:
+    name: Appwrite site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify in headless Chrome
+        env:
+          BASE_URL: ${{ vars.APPWRITE_SITE_URL }}
+        run: node scripts/ci/verify-live.mjs
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-appwrite-scheduled
+          path: .artifacts/verify-live
+          if-no-files-found: ignore
+          retention-days: 7
+
+  vps:
+    name: VPS site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify in headless Chrome
+        env:
+          BASE_URL: ${{ vars.VPS_SITE_URL }}
+        run: node scripts/ci/verify-live.mjs
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-vps-scheduled
+          path: .artifacts/verify-live
+          if-no-files-found: ignore
+          retention-days: 7

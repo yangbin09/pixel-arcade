@@ -1,0 +1,92 @@
+name: Deploy to VPS
+
+# 独立部署流水线（与 CI / Appwrite 发布解耦）：
+#   build（可复用镜像构建）→ deploy（SSH 上传镜像 + 重启容器 + nginx 反代）→ verify（线上无头 Chrome）
+# 触发：CI 在 master 成功后自动触发；也可手动 workflow_dispatch 指定任意 ref。
+# 回滚：手动重跑上一个可用 commit；服务器保留 pixel-arcade:rollback 镜像与 nginx 配置备份。
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref or SHA to deploy
+        required: true
+        default: master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build image
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    uses: ./.github/workflows/reusable-build-image.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event.workflow_run.head_sha }}
+
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production-vps
+      url: https://96-47-231-250.sslip.io
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event.workflow_run.head_sha }}
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+          path: .artifacts
+
+      - name: Deploy over SSH
+        env:
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_PORT: ${{ vars.VPS_PORT }}
+          VPS_USER: ${{ vars.VPS_USER }}
+          VPS_HOST_FINGERPRINT: ${{ vars.VPS_HOST_FINGERPRINT }}
+          VPS_SITE_HOST: ${{ vars.VPS_SITE_HOST }}
+          VPS_SITE_URL: ${{ vars.VPS_SITE_URL }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          IMAGE_PATH: .artifacts/pixel-arcade-image.tar.gz
+          NGINX_CONF: deploy/games-site.conf
+        run: node scripts/ci/deploy-vps.mjs
+
+  verify:
+    name: Verify VPS site
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event.workflow_run.head_sha }}
+
+      - name: Verify in headless Chrome
+        env:
+          BASE_URL: ${{ vars.VPS_SITE_URL }}
+        run: node scripts/ci/verify-live.mjs
+
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-vps
+          path: .artifacts/verify-live
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,173 @@
+name: CI
+
+# 质量门禁（解耦的独立节点）：
+#   changes → typecheck / unit(2 shards) / build → games-check / smoke / bundle / image → gate
+# 只改文档时自动跳过代码节点；手动 workflow_dispatch 全量跑。
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CI: "true"
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Path filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            code:
+              - 'packages/**'
+              - 'games/**'
+              - 'site/**'
+              - 'play/**'
+              - 'standalone/**'
+              - 'public/**'
+              - 'scripts/**'
+              - 'docker/**'
+              - 'deploy/**'
+              - '.github/**'
+              - 'index.html'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
+              - 'vite.standalone.config.ts'
+              - 'vitest.config.ts'
+              - 'Dockerfile'
+              - 'docker-compose.yml'
+              - 'bundle-budget.json'
+
+  typecheck:
+    name: Typecheck
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: npm run typecheck
+
+  unit:
+    name: Unit tests (${{ matrix.shard }}/2)
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - run: npx vitest run --shard=${{ matrix.shard }}/2 --reporter=verbose
+
+  build:
+    name: Build site
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/reusable-build-site.yml
+
+  games-check:
+    name: Games manifest + chunks
+    needs: [changes, build]
+    if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: .
+      - run: node scripts/check-games.mjs
+
+  smoke:
+    name: Headless Chrome smoke
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: .
+      - name: Smoke test (preview + 10 games)
+        run: node scripts/ci/smoke-preview.mjs
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: .artifacts/smoke
+          if-no-files-found: ignore
+          retention-days: 7
+
+  bundle:
+    name: Bundle budget
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: .
+      - run: node scripts/ci/bundle-budget.mjs
+
+  image:
+    name: Docker image
+    needs: changes
+    if: github.event_name != 'pull_request' && (needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/reusable-build-image.yml
+
+  audit:
+    name: Dependency audit (informational)
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/prepare
+      - name: npm audit
+        run: npm audit --audit-level=high
+
+  gate:
+    name: CI gate
+    if: always()
+    needs: [typecheck, unit, build, games-check, smoke, bundle, image]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Evaluate required jobs
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: node scripts/ci/ci-gate.mjs

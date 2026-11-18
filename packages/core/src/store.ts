@@ -97,7 +97,7 @@ export const Store = {
     Store.set("muted", muted ? "1" : "0");
   },
 
-  /** 通用开关：音效、减少动效、自动全屏、震动。 */
+  /** 通用开关：音效、减少动效、震动。 */
   flag(key: string, fallback: boolean): boolean {
     return Store.bool(`setting.${key}`, fallback);
   },

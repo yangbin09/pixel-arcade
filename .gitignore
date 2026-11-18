@@ -2,7 +2,10 @@ node_modules/
 dist/
 dist-standalone/
 .artifacts/
+.dsh-investigation/
 .preview.log
+deploy_key
+deploy_key.pub
 *.local
 .DS_Store
 Thumbs.db

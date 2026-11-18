@@ -5,7 +5,6 @@
 
 - 竖屏优先，触屏 / 键盘 / 虚拟手柄三通路
 - **复古掌机外壳**：机台边框、CRT 扫描线、开机动画，PAD / CRT 可开关
-- **全屏运行**：原生全屏 + 自动锁竖屏 + 屏幕唤醒锁；iPhone 可「添加到主屏幕」获得真全屏
 - 纯静态产物：`vite build` → 一个 `dist/`，Docker 里用 nginx 托管
 - 多模块：引擎、样式、UI、清单、10 个游戏各自独立，按需拆包加载
 
@@ -52,36 +51,47 @@ npm run docker:up        # docker compose up -d --build
 运行时只读（`read_only: true` + `tmpfs`），带 `/healthz` 健康检查，
 长缓存只给带 hash 的 `assets/`，HTML 永远 `no-cache`。
 
-局域网手机测试：`docker compose up` 后访问 `http://<电脑IP>:8080`，
-点开始会自动进全屏。iPhone Safari 不支持网页元素全屏，按提示「添加到主屏幕」
-从桌面打开才是没有地址栏/底栏的真全屏。
+局域网手机测试：`docker compose up` 后访问 `http://<电脑IP>:8080`。
 
-### 部署到 VPS
+### CI/CD 与线上部署
 
-仓库自带一个基于 `ssh2` 的部署脚本（不依赖 pnpm/rsync/PuTTY）：
+GitHub Actions 全自动流水线，详细设计/密钥/回滚手册见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
+
+| 目标 | 地址 | 形态 |
+| --- | --- | --- |
+| Appwrite Sites | <https://pixel-arcade.appwrite.network> | 静态产物直传 + Appwrite CDN |
+| VPS | <https://96-47-231-250.sslip.io> | Docker（nginx:alpine）+ 宿主 nginx + TLS |
+
+流水线（节点解耦，两条发布链路互不影响）：
+
+- **CI**：路径过滤 → typecheck → 单测（2 shard）→ 构建 → 游戏清单 → 无头 Chrome 冒烟 → 体积预算 → Dockerfile 校验 → 门禁
+- **Deploy Appwrite** / **Deploy VPS**：`master` 上 CI 成功后各自独立触发（也可手动 `workflow_dispatch` 指定任意 commit）
+- **Verify live**：每日定时 + 手动，无头 Chrome 验证两个线上目标
+- **Release**：推 `v*` tag 时自动产出 `pixel-arcade-site.zip`、单文件离线版和 SHA256
+
+手动发布 / 回滚：
 
 ```bash
-# 只读检查：系统、Docker、端口、磁盘
-DEPLOY_HOST=<ip> DEPLOY_USER=root DEPLOY_PASSWORD=<password> node scripts/deploy.mjs check
+# 发布任意 commit 到两个目标（回滚也是同一命令，把 ref 换成上一个好 commit）
+gh workflow run deploy-appwrite.yml -f ref=master
+gh workflow run deploy-vps.yml       -f ref=master
 
-# 打包源码 → 上传 → 服务器上 docker build → 重启容器 → 刷新 nginx 反代
-DEPLOY_HOST=<ip> DEPLOY_USER=root DEPLOY_PASSWORD=<password> node scripts/deploy.mjs deploy
+# 查看运行记录
+gh run list
 ```
 
-部署形态：容器只监听 `127.0.0.1:8080`，宿主 nginx 负责 TLS 与 80→443 跳转，
-`deploy/games-site.conf` 是反代配置（安装前会备份原配置，`nginx -t` 失败自动回滚）。
-密码只通过环境变量传入，不要写进文件或提交到仓库。
-
-线上检查与回滚：
+本地等价命令：
 
 ```bash
-ssh root@<ip> 'docker ps --filter name=pixel-arcade'
-ssh root@<ip> 'docker logs --tail 50 pixel-arcade'
-ssh root@<ip> 'curl -fsS http://127.0.0.1:8080/healthz'
+npm run ci:build     # build:all + 体积预算
+npm run ci:smoke     # vite preview + 无头 Chrome 冒烟
+npm run ci:verify    # 需要 BASE_URL，验证线上站点
+```
 
-# 回滚 nginx（换回旧的静态站点，旧文件仍在 /var/www/games）
-ssh root@<ip> 'ls /root/games.conf.bak.* | tail -1'
-ssh root@<ip> 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-available/games.conf && nginx -t && systemctl reload nginx'
+旧的本地手工部署脚本仍保留（基于 root 密码 + 服务器上构建），仅应急用：
+
+```bash
+DEPLOY_HOST=<ip> DEPLOY_USER=root DEPLOY_PASSWORD=<password> node scripts/deploy.mjs deploy
 ```
 
 ---
@@ -95,7 +105,7 @@ ssh root@<ip> 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-available/ga
 │  ├─ home.ts                # 首页入口：收集 meta、生成卡片、画缩略图
 │  └─ play.ts                # 播放入口：?game=<id> → 动�� import 对应游戏包
 ├─ packages/
-│  ├─ core/                  # 引擎：画布缩放、循环、输入、音效、HUD、弹窗、全屏
+│  ├─ core/                  # 引擎：画布缩放、循环、输入、音效、HUD、弹窗
 │  ├─ ui/                    # 首页卡片组件
 │  ├─ registry/              # 机位清单（slots.json）+ meta 校验
 │  └─ styles/                # tokens / base / home / play / motion
@@ -117,9 +127,9 @@ ssh root@<ip> 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-available/ga
 ## 多模块是怎么工作的
 
 1. **引擎不依赖任何具体游戏**。`@arcade/core` 只提供画布、循环、输入、音效、
-   HUD、弹窗、存档、全屏；打地鼠的草丛、地鼠、锤子都在 `games/whack/src/art.ts`。
+   HUD、弹窗、存档；打地鼠的草丛、地鼠、锤子都在 `games/whack/src/art.ts`。
 2. **游戏是插件**。每个包默认导出 `defineGame({ meta, create })`，
-   壳层负责开始 / 暂停 / 结算 / 最高分 / 全屏，游戏只写 `start / update / render`。
+   壳层负责开始 / 暂停 / 结算 / 最高分，游戏只写 `start / update / render`。
 3. **自动注册**。`site/home.ts` 用 `import.meta.glob('../games/*/src/meta.ts')`
    收集卡片，`site/play.ts` 用 `import.meta.glob('../games/*/src/index.ts')` 懒加载玩法。
    新增游戏不需要改任何公共文件。
@@ -129,27 +139,11 @@ ssh root@<ip> 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-available/ga
 新增游戏：读 `docs/GAME_API.md`，复制 `games/whack/` 的结构，
 在 `packages/registry/slots.json` 里占一个机位即可。
 
-## 全屏
+## 键盘与后台
 
-`@arcade/core` 的 `FullscreenController` 三层策略：
-
-| 设备 | 行为 |
-|---|---|
-| 桌面 Chrome/Edge、Android、iPad | `requestFullscreen({ navigationUI: "hide" })` + `orientation.lock("portrait")` |
-| iPhone Safari（不支持元素全屏） | `body.is-immersive`：`100dvh` + 隐藏页框 + safe-area；底栏是浏览器 UI，网页无法隐藏 |
-| 都不支持 | 画布放到最大，提示用 F11 |
-
-**iPhone 的真全屏**：Safari 不允许网页隐藏地址栏/底栏。唯一稳定的方案是
-「分享 → 添加到主屏幕」，从桌面以 PWA 打开：没有地址栏和底栏，状态栏与
-home indicator 仍在（系统 UI）。首次进游戏会自动弹一次像素风引导；
-点全屏按钮也会再打开。主屏幕版是独立存储，最高分和 Safari 不互通。
-
-- 触屏设备点「开始游戏」会在同一个用户手势里顺带请求全屏（成功率最高）。
-- 全屏时顶栏 2.6 秒后自动收起（真正释放高度），触摸/移动/按键唤回；HUD 与计时条常显。
-- iPhone 非 PWA 时给手柄预留约 50px 底部空间，避免 D-pad 被 Safari 底栏压住。
-- 进入全屏申请 `navigator.wakeLock('screen')`，切后台或退出时释放。
-- 退出全屏、切后台、来电都会自动暂停，回来先看到暂停面板。
-- 键盘：`F` 全屏、`P` / 空格 暂停、`M` 静音、`Esc` 退出全屏或暂停。
+- 键盘：`P` / 空格 暂停、`M` 静音、`Esc` 暂停。
+- 切后台、来电都会自动暂停，回来先看到暂停面板。
+- 想要全屏用浏览器自带的 F11，页面样式已适配手动全屏。
 
 ## 虚拟手柄与机台
 
@@ -176,7 +170,6 @@ home indicator 仍在（系统 UI）。首次进游戏会自动弹一次像素�
 | `pixelArcade.muted` | 音效开关 |
 | `pixelArcade.setting.pad` | 虚拟手柄开关 |
 | `pixelArcade.setting.crt` | CRT 扫描线开关 |
-| `pixelArcade.setting.pwa.tip` | iPhone 安装引导是否已读 |
 | `pixelArcade.setting.*` | 其他设置 |
 | `pixelArcade.schema` | 存档版本 |
 

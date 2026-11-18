@@ -43,7 +43,7 @@ export const meta: GameMeta = {
   title: "打地鼠",
   tagline: "30 秒一局 · 连击越打越高",
   howto: "地鼠会从土坑里冒头，敲中就得分。连击越高，分数倍率越高；金地鼠停留极短，但值 30 分。",
-  hint: "按 <kbd>1</kbd>–<kbd>9</kbd> 也能敲 · <kbd>空格</kbd> 暂停 · <kbd>F</kbd> 全屏",
+  hint: "按 <kbd>1</kbd>–<kbd>9</kbd> 也能敲 · <kbd>空格</kbd> 暂停",
   duration: "30 秒一局",
   tags: ["地鼠 +10", "金鼠 +30", "连击 5 / 10 / 20 → ×2 / ×3 / ×4"],
   size: { w: 168, h: 168 },

@@ -1,0 +1,55 @@
+name: Build image
+
+# 可复用节点：构建生产 Docker 镜像（验证 Dockerfile 可用），导出 tar.gz 供 VPS 部署节点使用。
+# 走 GHA 缓存，Dockerfile 变更时才重新装依赖。
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref or SHA to build (empty = caller's SHA)
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: pixel-arcade:ci
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export image
+        run: |
+          mkdir -p .artifacts/docker-image
+          docker save pixel-arcade:ci | gzip -9 > .artifacts/docker-image/pixel-arcade-image.tar.gz
+          ls -lh .artifacts/docker-image/pixel-arcade-image.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: .artifacts/docker-image/pixel-arcade-image.tar.gz
+          if-no-files-found: error
+          retention-days: 7

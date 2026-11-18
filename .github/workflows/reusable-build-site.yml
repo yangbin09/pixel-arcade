@@ -1,0 +1,47 @@
+name: Build site
+
+# 可复用节点：typecheck + 双产物构建 + 体积预算 + 上传 artifact。
+# 被 CI、两个部署流水线、Release 共用，保证「构建一次、多处复用」。
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref or SHA to build (empty = caller's SHA)
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build static assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          fetch-depth: 1
+
+      - name: Prepare Node workspace
+        uses: ./.github/actions/prepare
+
+      - name: Build (typecheck + site + standalone + precompress)
+        run: npm run build:all
+
+      - name: Bundle budget
+        run: node scripts/ci/bundle-budget.mjs
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: |
+            dist
+            dist-standalone
+          if-no-files-found: error
+          retention-days: 7

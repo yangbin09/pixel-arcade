@@ -7,7 +7,6 @@
  *   input/*                        指针、键盘、滑动
  *   audio                          合成音效
  *   ui/*                           HUD、弹窗、Toast
- *   fullscreen                     全屏 / 沉浸模式
  *   shell                         播放壳（游戏运行时）
  *   game                          游戏契约类型
  */
@@ -18,7 +17,6 @@ export * from "./store";
 export * from "./dom";
 export * from "./loop";
 export * from "./audio";
-export * from "./fullscreen";
 export * from "./game";
 export * from "./shell";
 export * from "./a11y";
@@ -33,7 +31,6 @@ export * from "./input/pointer";
 export * from "./input/keys";
 export * from "./input/swipe";
 export * from "./input/pad";
-export * from "./install";
 
 export * from "./ui/hud";
 export * from "./ui/overlay";

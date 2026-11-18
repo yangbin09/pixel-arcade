@@ -8,21 +8,18 @@
  *   BASE_URL=http://localhost:4173 node scripts/smoke.mjs
  */
 import { spawn } from "node:child_process";
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { findChrome, ciChromeArgs } from "./lib/find-chrome.mjs";
 
-const CHROME_CANDIDATES = [
-  process.env.CHROME_PATH,
-  "D:\\ruanjian\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-].filter(Boolean);
-
-const CHROME = CHROME_CANDIDATES.find((p) => existsSync(p));
+const CHROME = findChrome();
 if (!CHROME) {
   console.error("找不到 Chrome/Edge，请设置 CHROME_PATH");
   process.exit(1);
 }
+
+// CI 下把「游戏没进 playing / 有控制台错误」当作真实失败；本地默认只记录。
+const STRICT = process.env.SMOKE_STRICT === "1" || process.env.CI === "true" || process.env.CI === "1";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:4173";
 const OUT = resolve(process.cwd(), ".artifacts/smoke");
@@ -133,6 +130,7 @@ const chrome = spawn(
     "--disable-renderer-backgrounding",
     "--disable-features=CalculateNativeWinOcclusion",
     "--force-device-scale-factor=1",
+    ...ciChromeArgs(),
     "about:blank",
   ],
   { stdio: "ignore" },
@@ -293,13 +291,8 @@ try {
     );
     await shoot(`${id}-pause`);
 
-    // 隐藏暂停面板、强制顶栏最终态，截一张稳定的布局图。
-    // 真实浏览器里顶栏由 shell 的 2.6s 定时器收起；无头标签会节流 setTimeout。
-    await evaluate(
-      client,
-      `document.querySelector('#overlay').hidden = true;
-       document.querySelector('#shell').classList.add('is-chrome-hidden')`,
-    );
+    // 隐藏暂停面板，截一张稳定的布局图。
+    await evaluate(client, `document.querySelector('#overlay').hidden = true`);
     await sleep(320);
     const finalLayout = await evaluate(
       client,
@@ -466,6 +459,29 @@ try {
 
     console.log(
       `${id.padEnd(9)} state=${ready.state}->${playing.state} pause=${paused.state} resume=${resumed.state} input=${afterInput.state}${afterInput.resultVisible ? "/result" : ""} canvas=${ready.field.backing} errors=${errors.length}`,
+    );
+  }
+
+  // CI 校验：首页卡片齐全、每局都能点开始并进入 playing、控制台无错误。
+  const failures = [];
+  const homeReport = report.find((entry) => entry.page === "home");
+  if (!homeReport || homeReport.cards < 10) {
+    failures.push(`首页游戏卡片不足：${homeReport?.cards ?? 0}/10`);
+  }
+  for (const entry of report) {
+    if (!entry.game) continue;
+    if (!entry.started) failures.push(`${entry.game}: 没有找到开始按钮`);
+    if (!["playing", "over"].includes(entry.playing.state)) {
+      failures.push(`${entry.game}: 点开始后状态是 ${entry.playing.state}`);
+    }
+    if (entry.errors.length) failures.push(`${entry.game}: 控制台错误 ${entry.errors.join(" | ")}`);
+  }
+  if (failures.length) {
+    console.error(`\n冒烟测试未通过：\n - ${failures.join("\n - ")}`);
+    if (STRICT) process.exitCode = 1;
+  } else {
+    console.log(
+      `\n冒烟测试通过：${ids.length} 个游戏全部进入 playing，首页 ${homeReport.cards} 张卡片，0 控制台错误`,
     );
   }
 

@@ -1,4 +1,3 @@
-import { FullscreenController } from "./fullscreen";
 import type { GameContext, GameInstance, GameMeta, GameResult } from "./game";
 import { Hud } from "./ui/hud";
 import { Overlay } from "./ui/overlay";
@@ -8,7 +7,6 @@ import { PointerInput } from "./input/pointer";
 import { KeyMap } from "./input/keys";
 import { SwipeInput } from "./input/swipe";
 import { Pad } from "./input/pad";
-import { InstallGuide, detectPlatform, isStandalone } from "./install";
 import { P } from "./palette";
 import { Sound } from "./audio";
 import { Store } from "./store";
@@ -16,7 +14,7 @@ import { must, isInteractiveTarget } from "./dom";
 import { createLiveRegion } from "./a11y";
 import { drawCountdownOverlay } from "./ui/countdown";
 import { paintAllIcons } from "./render/icons";
-import { clamp, isCoarsePointer, prefersReducedMotion } from "./util";
+import { clamp, prefersReducedMotion } from "./util";
 
 export type GameState = "ready" | "countdown" | "playing" | "paused" | "over";
 
@@ -54,7 +52,7 @@ export interface PlayShellOptions {
 
 /**
  * 播放壳：一个游戏页面的运行时。
- * 负责 HUD、倒计时、暂停、结算、全屏、输入、错误兜底，
+ * 负责 HUD、倒计时、暂停、结算、输入、错误兜底，
  * 游戏只实现 start/update/render 三件事。
  */
 export class PlayShell {
@@ -74,7 +72,6 @@ export class PlayShell {
   private readonly timeFill: HTMLElement;
   private readonly muteBtn: HTMLButtonElement;
   private readonly pauseBtn: HTMLButtonElement;
-  private readonly fsBtn: HTMLButtonElement;
   private readonly padToggle: HTMLButtonElement;
   private readonly crtToggle: HTMLButtonElement;
   private readonly overlay: Overlay;
@@ -82,14 +79,12 @@ export class PlayShell {
   private readonly hud: Hud;
   private readonly live = createLiveRegion();
 
-  private readonly fullscreen: FullscreenController;
   private readonly surface: PixelSurface;
   private readonly fxSurface: PixelSurface;
   private readonly pointer: PointerInput;
   private readonly keys: KeyMap;
   private readonly swipe: SwipeInput;
   private readonly pad: Pad;
-  private readonly install: InstallGuide;
 
   private game: GameInstance | null = null;
   private raf = 0;
@@ -99,10 +94,8 @@ export class PlayShell {
   private cdRemaining = COUNTDOWN_MS;
   private cdSecond = 0;
   private errorShown = false;
-  private chromeTimer = 0;
   private resizeRaf = 0;
   private bootTimer = 0;
-  private guideTimer = 0;
   private lastDpr = window.devicePixelRatio || 1;
   private readonly cleanup: (() => void)[] = [];
 
@@ -121,14 +114,8 @@ export class PlayShell {
     this.timeFill = must<HTMLElement>("#timeFill");
     this.muteBtn = must<HTMLButtonElement>("#muteBtn");
     this.pauseBtn = must<HTMLButtonElement>("#pauseBtn");
-    this.fsBtn = must<HTMLButtonElement>("#fsBtn");
     this.padToggle = must<HTMLButtonElement>("#padToggle");
     this.crtToggle = must<HTMLButtonElement>("#crtToggle");
-
-    document.documentElement.classList.toggle("is-standalone", isStandalone());
-    document.body.classList.toggle("is-standalone", isStandalone());
-    const platform = detectPlatform();
-    document.body.classList.toggle("is-ios-browser", platform === "ios" || platform === "ios-inapp");
 
     const meta = this.meta;
     document.title = `${meta.title} · PIXEL ARCADE 小游戏合集`;
@@ -169,16 +156,12 @@ export class PlayShell {
     if (meta.pad) this.pad.setVisible(Store.flag("pad", true));
     document.body.classList.toggle("is-crt", Store.flag("crt", true));
 
-    this.install = new InstallGuide();
-    this.fullscreen = new FullscreenController(this.shell);
-
     this.fillNotes();
     paintAllIcons(document);
     this.bindChrome();
     this.bindCabinet();
     this.bindGlobalKeys();
     this.bindOverlay();
-    this.bindFullscreen();
     this.bindVisibility();
     this.syncCabinetSwitches();
 
@@ -199,11 +182,6 @@ export class PlayShell {
     });
     this.game.render();
     this.startLoop();
-
-    // iPhone Safari 没有元素全屏：第一次进游戏把「添加到主屏幕」讲清楚
-    this.guideTimer = window.setTimeout(() => {
-      if (this.fullscreen.needsInstallGuide) this.install.maybeShow();
-    }, 700);
 
     // 动态 import 的游戏可能在首次布局之后才挂载，补一次强制 re-fit
     requestAnimationFrame(() => {
@@ -241,7 +219,6 @@ export class PlayShell {
       store: Store,
       hud: this.hud,
       toast: this.toast,
-      fullscreen: this.fullscreen,
       reducedMotion: prefersReducedMotion(),
       timer: {
         set(remaining: number, total: number, options?: { low?: number; critical?: number }) {
@@ -275,22 +252,13 @@ export class PlayShell {
 
   private onMuteClick = (): void => this.toggleMute();
   private onPauseClick = (): void => this.togglePause();
-  private onFsClick = (): void => {
-    void this.toggleFullscreen();
-  };
 
   private bindChrome(): void {
     this.muteBtn.addEventListener("click", this.onMuteClick);
     this.pauseBtn.addEventListener("click", this.onPauseClick);
-    this.fsBtn.addEventListener("click", this.onFsClick);
-    this.shell.addEventListener("pointermove", this.revealChrome, { passive: true });
-    this.shell.addEventListener("pointerdown", this.revealChrome, { passive: true });
     this.cleanup.push(() => {
       this.muteBtn.removeEventListener("click", this.onMuteClick);
       this.pauseBtn.removeEventListener("click", this.onPauseClick);
-      this.fsBtn.removeEventListener("click", this.onFsClick);
-      this.shell.removeEventListener("pointermove", this.revealChrome);
-      this.shell.removeEventListener("pointerdown", this.revealChrome);
     });
     this.syncMuteIcon();
   }
@@ -346,17 +314,12 @@ export class PlayShell {
         this.toggleMute();
         return;
       }
-      if (key === "f") {
-        event.preventDefault();
-        void this.toggleFullscreen();
-        return;
-      }
       if (key === "p" || (key === " " && (this.meta.spaceAction ?? "pause") === "pause")) {
         event.preventDefault();
         this.togglePause();
         return;
       }
-      if (key === "escape" && !this.fullscreen.active) {
+      if (key === "escape") {
         event.preventDefault();
         this.togglePause();
         return;
@@ -374,26 +337,7 @@ export class PlayShell {
     this.overlay.onAction((action) => {
       if (action === "start" || action === "replay" || action === "restart") this.begin();
       else if (action === "resume") this.resume();
-      else if (action === "exit-fs") void this.fullscreen.exit();
     });
-  }
-
-  private bindFullscreen(): void {
-    this.cleanup.push(
-      this.fullscreen.onChange((active, native) => {
-        document.body.classList.toggle("is-fullscreen", active);
-        this.shell.classList.toggle("is-fullscreen", active);
-        this.syncFullscreenIcon();
-        this.surface.schedule();
-        this.fxSurface.schedule();
-        this.revealChrome();
-        if (!active && this.state === "playing") {
-          this.pause("playing");
-          this.toast.show(native ? "已退出全屏，暂停一下" : "已退出沉浸模式，暂停一下");
-        }
-      }),
-    );
-    this.syncFullscreenIcon();
   }
 
   private bindVisibility(): void {
@@ -496,12 +440,6 @@ export class PlayShell {
 
   begin(): void {
     if (this.state === "countdown" || this.state === "playing") return;
-    // 第一次在 iPhone 上开局：先把「添加到主屏幕」讲清楚，避免以为全屏坏了
-    if (this.fullscreen.needsInstallGuide && !Store.flag("pwa.tip", false)) {
-      window.clearTimeout(this.guideTimer);
-      this.install.show();
-      return;
-    }
     Sound.unlock();
     this.hud.reset();
     this.hud.urgent(false);
@@ -509,10 +447,6 @@ export class PlayShell {
     this.overlay.hide();
     this.errorShown = false;
     this.game?.start();
-
-    if ((this.meta.autoFullscreen ?? true) && isCoarsePointer() && !this.fullscreen.active) {
-      void this.fullscreen.enter();
-    }
 
     if (this.meta.countdown === false) {
       this.setState("playing");
@@ -581,7 +515,6 @@ export class PlayShell {
         bestLabel: this.meta.bestLabel ?? "历史最高",
         stats: result.stats ?? [],
       },
-      { canExitFullscreen: this.fullscreen.active },
     );
     this.live.announce(`${result.title ?? "本局结束"}，${this.meta.scoreLabel ?? "得分"} ${result.score}`);
     if (record) this.toast.show("新纪录！");
@@ -604,26 +537,6 @@ export class PlayShell {
     this.muteBtn.setAttribute("aria-label", Sound.muted ? "打开音效" : "关闭音效");
   }
 
-  private async toggleFullscreen(): Promise<void> {
-    Sound.unlock();
-    if (this.fullscreen.needsInstallGuide) {
-      // iPhone 没有元素全屏：先进入沉浸回退，再把「添加到主屏幕」讲清楚
-      await this.fullscreen.enter();
-      this.install.show();
-      return;
-    }
-    await this.fullscreen.toggle();
-  }
-
-  private syncFullscreenIcon(): void {
-    const canvas = this.fsBtn.querySelector("canvas");
-    if (!canvas) return;
-    canvas.dataset.icon = this.fullscreen.active ? "exitFullscreen" : "fullscreen";
-    paintAllIcons(this.fsBtn);
-    this.fsBtn.setAttribute("aria-pressed", String(this.fullscreen.active));
-    this.fsBtn.setAttribute("aria-label", this.fullscreen.active ? "退出全屏" : "全屏运行");
-  }
-
   private setTimer(
     remaining: number,
     total: number,
@@ -639,15 +552,6 @@ export class PlayShell {
     this.timerWrap.classList.toggle("is-low", ratio <= (options?.low ?? 0.34));
     this.timerWrap.classList.toggle("is-critical", ratio <= (options?.critical ?? 0.15));
   }
-
-  private revealChrome = (): void => {
-    if (!this.fullscreen.active) return;
-    this.shell.classList.remove("is-chrome-hidden");
-    window.clearTimeout(this.chromeTimer);
-    this.chromeTimer = window.setTimeout(() => {
-      if (this.state === "playing") this.shell.classList.add("is-chrome-hidden");
-    }, 2600);
-  };
 
   private stopLoop(): void {
     this.running = false;
@@ -667,16 +571,12 @@ export class PlayShell {
     this.overlay.destroy();
     this.toast.destroy();
     this.hud.destroy();
-    this.fullscreen.destroy();
     this.pad.destroy();
-    this.install.destroy();
     this.live.destroy();
     for (const fn of this.cleanup) fn();
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("orientationchange", this.onResize);
-    window.clearTimeout(this.chromeTimer);
     window.clearTimeout(this.bootTimer);
-    window.clearTimeout(this.guideTimer);
     if (this.resizeRaf) cancelAnimationFrame(this.resizeRaf);
   }
 

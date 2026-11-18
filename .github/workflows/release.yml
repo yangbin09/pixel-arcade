@@ -1,0 +1,52 @@
+name: Release
+
+# 打 v* tag 时构建双产物，并发布 GitHub Release：
+#   - pixel-arcade-site.zip：完整静态站（可直传任意静态托管）
+#   - pixel-arcade-standalone.html：单文件离线版
+#   - SHA256SUMS.txt
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build site
+    uses: ./.github/workflows/reusable-build-site.yml
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: .
+
+      - name: Package release assets
+        run: |
+          rm -rf package && mkdir -p package
+          cp -a dist package/site
+          cp dist-standalone/index.html package/pixel-arcade-standalone.html
+          (cd package && zip -qr ../pixel-arcade-site.zip site)
+          cp package/pixel-arcade-standalone.html .
+          sha256sum pixel-arcade-site.zip pixel-arcade-standalone.html > SHA256SUMS.txt
+          ls -lh pixel-arcade-site.zip pixel-arcade-standalone.html SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            pixel-arcade-site.zip
+            pixel-arcade-standalone.html
+            SHA256SUMS.txt
+          generate_release_notes: true
+          fail_on_unmatched_files: true
