@@ -7,7 +7,8 @@
  * 需要的环境变量（不要写进仓库）：
  *   DEPLOY_HOST      例如 96.47.231.250
  *   DEPLOY_USER      root
- *   DEPLOY_PASSWORD  root 密码（或用 DEPLOY_KEY 指定私钥路径）
+ *   DEPLOY_KEY       私钥路径（推荐；服务器已关闭密码登录，必须用密钥）
+ *   DEPLOY_PASSWORD  root 密码（仅旧环境保留，当前线上服务器已禁用密码登录）
  *
  * 部署前请在本地先跑通：npm run typecheck && npm run build
  */

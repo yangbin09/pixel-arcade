@@ -86,3 +86,41 @@ jobs:
           path: .artifacts/verify-live
           if-no-files-found: ignore
           retention-days: 7
+
+  notify:
+    name: Open deploy alert
+    needs: [build, deploy, verify]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create or update issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALERT_TITLE: 部署失败（Appwrite）
+          ALERT_MODE: open
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
+        run: node scripts/ci/notify-alert.mjs
+
+  close-alert:
+    name: Close deploy alert
+    needs: [build, deploy, verify]
+    if: success()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Close issue if any
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALERT_TITLE: 部署失败（Appwrite）
+          ALERT_MODE: close
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/ci/notify-alert.mjs
