@@ -215,6 +215,20 @@ try {
       { stream: true },
     );
     console.log(`\nprobe 完成（exit ${result.code}）。`);
+  } else if (action === "status") {
+    const result = await exec(
+      client,
+      [
+        "docker ps --filter name=pixel-arcade --format '{{.Names}} | {{.Status}} | {{.Ports}}'",
+        "docker inspect --format 'state={{.State.Status}} health={{.State.Health.Status}} restarts={{.RestartCount}}' pixel-arcade 2>/dev/null || true",
+        "curl -fsS -k -H 'Host: 96-47-231-250.sslip.io' https://127.0.0.1/healthz",
+        "df -h / | tail -1",
+        "free -m | head -2",
+        "nginx -t 2>&1 | tail -1",
+      ].join("; "),
+      { stream: true },
+    );
+    console.log(`\nstatus 完成（exit ${result.code}）。`);
   } else if (action === "deploy") {
     makeBundle();
     console.log("上传源码包与站点配置 ...");
