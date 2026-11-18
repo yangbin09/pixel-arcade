@@ -153,11 +153,11 @@ jobs:
     if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/prepare
       - name: npm audit
+        continue-on-error: true
         run: npm audit --audit-level=high
 
   gate:
