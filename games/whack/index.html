@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07060c">
+  <meta name="color-scheme" content="dark">
+  <title>打地鼠 · 小游戏合集</title>
+  <meta name="description" content="30 秒打地鼠：敲中地鼠得分，连击越高倍率越高，还有停留极短的金地鼠。手机触屏和键盘 1-9 都能玩。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2307060c'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23f3a841'/%3E%3Crect x='7' y='2' width='2' height='2' fill='%23ffd35f'/%3E%3Crect x='2' y='9' width='2' height='2' fill='%23a6d96b'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../../assets/style.css">
+  <script src="../../assets/core.js" defer></script>
+  <script src="whack.js" defer></script>
+</head>
+<body class="page-play" data-game-state="ready">
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <a class="skip-link" href="#field">跳到游戏画面</a>
+
+  <main class="play-wrap">
+    <header class="play-topbar">
+      <a class="icon-btn" href="../../index.html" aria-label="返回首页" title="返回首页">
+        <canvas class="icon" data-icon="back" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+      </a>
+
+      <div class="play-title">
+        <h1>打地鼠</h1>
+        <p>30 秒挑战</p>
+      </div>
+
+      <div class="play-actions">
+        <button class="icon-btn" id="muteBtn" type="button" aria-label="关闭音效" aria-pressed="false" title="音效">
+          <canvas class="icon" data-icon="sound" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+        </button>
+        <button class="icon-btn" id="pauseBtn" type="button" aria-label="暂停游戏" aria-pressed="false" title="暂停" disabled>
+          <canvas class="icon" data-icon="pause" data-icon-size="22" width="11" height="11" aria-hidden="true"></canvas>
+        </button>
+      </div>
+    </header>
+
+    <section class="hud" id="hud" aria-label="游戏数据">
+      <div class="stat" id="timeStat">
+        <span class="stat-label"><i class="dot dot--time" aria-hidden="true"></i>时间</span>
+        <canvas id="timeDisplay" role="img" aria-label="剩余时间 30 秒"></canvas>
+      </div>
+      <div class="stat stat-score" id="scoreStat">
+        <span class="stat-label"><i class="dot dot--score" aria-hidden="true"></i>分数</span>
+        <canvas id="scoreDisplay" role="img" aria-label="分数 0"></canvas>
+      </div>
+      <div class="stat" id="comboStat">
+        <span class="stat-label"><i class="dot dot--combo" aria-hidden="true"></i>连击</span>
+        <div class="combo-line">
+          <canvas id="comboDisplay" role="img" aria-label="连击 0"></canvas>
+          <span class="combo-mult" id="comboMult">×1</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="timer" id="timerWrap" aria-hidden="true"><i id="timeFill"></i></div>
+
+    <div class="screen" id="screen">
+      <canvas id="field" width="168" height="168" tabindex="0" aria-label="打地鼠游戏区。点击或轻触土坑敲击地鼠，也可以按键盘数字 1 到 9 敲击对应位置。"></canvas>
+
+      <div class="toast" id="toast" role="status" hidden></div>
+
+      <div class="overlay" id="overlay" tabindex="-1">
+        <section class="dialog" id="readyPanel" role="dialog" aria-modal="true" aria-labelledby="readyTitle">
+          <p class="dialog-kicker">30 秒挑战</p>
+          <h2 id="readyTitle">准备好了吗？</h2>
+          <p class="dialog-lead">地鼠会从土坑里冒头，敲中就得分。连击越高，分数倍率越高。</p>
+          <div class="dialog-actions">
+            <button class="btn btn-primary" id="startBtn" type="button">开始游戏</button>
+            <a class="btn-link" href="../../index.html">返回首页</a>
+          </div>
+          <p class="dialog-hint">按 <kbd>1</kbd>–<kbd>9</kbd> 也能敲 · <kbd>空格</kbd> 暂停</p>
+        </section>
+
+        <section class="dialog" id="pausePanel" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" hidden>
+          <p class="dialog-kicker">PAUSED</p>
+          <h2 id="pauseTitle">暂停中</h2>
+          <p class="dialog-lead">计时已经停下，准备好了再继续。</p>
+          <div class="dialog-actions">
+            <button class="btn btn-primary" id="resumeBtn" type="button">继续游戏</button>
+            <button class="btn btn-ghost" id="restartBtn" type="button">重新开始</button>
+            <a class="btn-link" href="../../index.html">返回首页</a>
+          </div>
+        </section>
+
+        <section class="dialog" id="resultPanel" role="dialog" aria-modal="true" aria-labelledby="resultTitle" hidden>
+          <p class="dialog-kicker">TIME UP</p>
+          <h2 id="resultTitle">时间到</h2>
+          <p class="score-label">本局得分</p>
+          <canvas id="finalScore" role="img" aria-label="本局得分 0"></canvas>
+          <p class="record" id="recordBadge" hidden>新纪录！</p>
+          <div class="result-stats">
+            <div><span>最高连击</span><b id="finalCombo">0</b></div>
+            <div><span>命中率</span><b id="finalAccuracy">0%</b></div>
+            <div><span>历史最高</span><b id="finalBest">0</b></div>
+          </div>
+          <div class="dialog-actions">
+            <button class="btn btn-primary" id="replayBtn" type="button">再来一局</button>
+            <a class="btn btn-ghost" href="../../index.html">返回首页</a>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <section class="play-notes" aria-label="玩法说明">
+      <p class="score-rules">
+        <span class="tag tag-normal">地鼠 +10</span>
+        <span class="tag tag-gold">金鼠 +30</span>
+        <span class="tag">连击 5 / 10 / 20 → ×2 / ×3 / ×4</span>
+      </p>
+      <p class="miss-rule">
+        敲空不扣分，但会中断连击。<span class="keys-hint">键盘 <kbd>1</kbd>–<kbd>9</kbd> 敲击 · <kbd>空格</kbd> 暂停</span>
+      </p>
+      <div class="play-foot">
+        <a class="back-link" href="../../index.html">← 全部游戏</a>
+        <span class="game-code">NO. 01 / WHACK-A-MOLE</span>
+      </div>
+    </section>
+
+    <p class="sr-only" id="live" aria-live="polite"></p>
+  </main>
+</body>
+</html>
