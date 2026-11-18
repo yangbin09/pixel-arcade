@@ -6,6 +6,8 @@ import { mountHome } from "./home-view";
 
 /** 构建期收集所有游戏的 meta（轻量，不含玩法逻辑）。 */
 const metaModules = import.meta.glob<{ meta: GameMeta }>("../games/*/src/meta.ts", { eager: true });
+/** 预取用：不 eager，悬停/聚焦时才真正 import。 */
+const gameLoaders = import.meta.glob("../games/*/src/index.ts");
 
 const metas = Object.values(metaModules)
   .map((mod) => mod.meta)
@@ -21,5 +23,10 @@ ready(() => {
   mountHome({
     metas,
     hrefFor: (id) => `./play/?game=${id}`,
+    prefetch: (id) => {
+      gameLoaders[`../games/${id}/src/index.ts`]?.().catch(() => {
+        /* 预取失败不影响点击；真正进游戏时会再试一次 */
+      });
+    },
   });
 });

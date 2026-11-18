@@ -37,6 +37,9 @@ export const meta: GameMeta = {
   duration: "1–3 分钟",
   tags: ["果实 +10", "每 5 颗加速", "撞墙或咬到自己结束"],
   size: { w: 168, h: 168 },
+  pad: {
+    dpad: "four",
+  },
   scoreMode: "high",
   scoreLabel: "本局得分",
   bestLabel: "历史最高",

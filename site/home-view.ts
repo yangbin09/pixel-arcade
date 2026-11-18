@@ -17,6 +17,8 @@ export interface HomeViewOptions {
   metas: GameMeta[];
   /** 卡片链接：多页版是 ./play/?game=id，单文件版是 #game=id */
   hrefFor: (id: string) => string;
+  /** 鼠标悬停/键盘聚焦卡片时预取游戏 chunk（多页版用）。 */
+  prefetch?: (id: string) => void;
   /** 是否给第一张可玩卡片做待机动画，默认 true。 */
   animate?: boolean;
 }
@@ -36,6 +38,8 @@ export function mountHome(options: HomeViewOptions): HomeView {
 
   let idleTimer = 0;
   let idleCanvas: HTMLCanvasElement | null = null;
+  let resizeRaf = 0;
+  let lastDpr = window.devicePixelRatio || 1;
   let onVisibility: (() => void) | null = null;
   let onResize: (() => void) | null = null;
 
@@ -83,23 +87,35 @@ export function mountHome(options: HomeViewOptions): HomeView {
       const meta = byId.get(slot.id);
       if (meta) openCount += 1;
       const best = meta ? Store.best(meta.id, meta.scoreMode ?? "high") : null;
-      grid.append(
-        createCard(
-          {
-            id: slot.id,
-            no: slot.no,
-            title: meta?.title ?? "敬请期待",
-            tagline: meta?.tagline ?? "空机位 · 正在打磨像素",
-            duration: meta?.duration ?? "",
-            open: !!meta,
-            best,
-            bestLabel: meta?.bestLabel ?? "最高分",
-            scoreMode: meta?.scoreMode ?? "high",
-          },
-          index,
-          options.hrefFor(slot.id),
-        ),
+      const card = createCard(
+        {
+          id: slot.id,
+          no: slot.no,
+          title: meta?.title ?? "敬请期待",
+          tagline: meta?.tagline ?? "空机位 · 正在打磨像素",
+          duration: meta?.duration ?? "",
+          open: !!meta,
+          best,
+          bestLabel: meta?.bestLabel ?? "最高分",
+          scoreMode: meta?.scoreMode ?? "high",
+        },
+        index,
+        options.hrefFor(slot.id),
       );
+      grid.append(card);
+
+      // 桌面悬停 / 键盘聚焦就预取玩法 chunk；点进去时已经躺在缓存里
+      const link = card.querySelector<HTMLAnchorElement>("a.game-card");
+      if (link && options.prefetch) {
+        let warmed = false;
+        const warm = (): void => {
+          if (warmed) return;
+          warmed = true;
+          options.prefetch!(slot.id);
+        };
+        link.addEventListener("pointerenter", warm, { once: true });
+        link.addEventListener("focus", warm, { once: true });
+      }
     });
 
     for (const canvas of qsa<HTMLCanvasElement>("canvas[data-thumb]", grid)) {
@@ -154,8 +170,14 @@ export function mountHome(options: HomeViewOptions): HomeView {
     }
   };
   onResize = () => {
-    paintAllIcons(root);
-    for (const canvas of qsa<HTMLCanvasElement>("canvas[data-thumb]", root)) paintThumb(canvas, 0);
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(() => {
+      resizeRaf = 0;
+      const dpr = window.devicePixelRatio || 1;
+      if (dpr === lastDpr) return;
+      lastDpr = dpr;
+      paintAllIcons(root);
+    });
   };
 
   document.addEventListener("visibilitychange", onVisibility);
@@ -171,6 +193,7 @@ export function mountHome(options: HomeViewOptions): HomeView {
     refreshBest,
     destroy() {
       stopIdle();
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
       if (onVisibility) document.removeEventListener("visibilitychange", onVisibility);
       if (onResize) window.removeEventListener("resize", onResize);
       window.removeEventListener("pageshow", refreshBest);

@@ -41,11 +41,14 @@ import {
   paddleRect,
   speedForLevel,
   substepsFor,
+  touchDragAnchor,
+  touchDragTarget,
   type Ball,
   type Brick,
   type PowerUp,
   type PowerUpKind,
   type Rect,
+  type TouchDragAnchor,
 } from "./logic";
 
 const W = FIELD_W;
@@ -91,6 +94,9 @@ const game = defineGame({
     let destroyed = 0;
     let clearLeft = 0;
     let shake = 0;
+
+    /** 触摸 / 笔的挡板拖动锚点；鼠标保持绝对跟随。 */
+    let drag: TouchDragAnchor | null = null;
 
     /* ---------------- HUD ---------------- */
 
@@ -141,6 +147,7 @@ const game = defineGame({
       clearLeft = 0;
       shake = 0;
       serveCount = 1;
+      drag = null;
       balls = [];
       powerUps = [];
       particles = [];
@@ -577,16 +584,34 @@ const game = defineGame({
     ctx.input.pointer.on("down", (info) => {
       ctx.audio.unlock();
       if (phase === "over" || ctx.isPaused()) return;
-      if (info.source.pointerType === "mouse" && info.source.button !== 0) return;
-
-      paddleX = clampPaddleX(info.x - paddleWidth / 2, paddleWidth);
+      if (info.source.pointerType === "mouse") {
+        if (info.source.button !== 0) return;
+        drag = null;
+        paddleX = clampPaddleX(info.x - paddleWidth / 2, paddleWidth);
+      } else {
+        // 触摸 / 笔：只记锚点，挡板不瞬移到手指下；按下仍然可以发球。
+        drag = touchDragAnchor(info.x, paddleX);
+      }
       launch();
     });
 
     ctx.input.pointer.on("move", (info) => {
       if (phase === "over" || ctx.isPaused()) return;
-      paddleX = clampPaddleX(info.x - paddleWidth / 2, paddleWidth);
+      if (info.source.pointerType === "mouse") {
+        drag = null;
+        paddleX = clampPaddleX(info.x - paddleWidth / 2, paddleWidth);
+        return;
+      }
+      if (!drag || !info.down) return;
+      paddleX = touchDragTarget(drag, info.x, paddleWidth);
     });
+
+    const endDrag = (): void => {
+      drag = null;
+    };
+    ctx.input.pointer.on("up", endDrag);
+    ctx.input.pointer.on("cancel", endDrag);
+    ctx.input.pointer.on("leave", endDrag);
 
     ctx.input.keys.onPress((action) => {
       if (action === "action") launch();

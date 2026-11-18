@@ -57,6 +57,10 @@ export const meta: GameMeta = {
   duration: "2–4 分钟",
   tags: ["砖块 10/20/30", "掉落道具", "3 条命"],
   size: { w: FIELD_W, h: FIELD_H },
+  pad: {
+    dpad: "lr",
+    a: { action: "action", label: "发射" },
+  },
   scoreMode: "high",
   spaceAction: "action",
   hud: [

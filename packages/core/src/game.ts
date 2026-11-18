@@ -9,6 +9,34 @@ import type { Hud, HudSlot } from "./ui/hud";
 import type { FullscreenController } from "./fullscreen";
 import type { Toast } from "./ui/toast";
 
+/** 虚拟手柄上的一个按键：语义动作 + 面板上的短标签。 */
+export interface PadButtonSpec {
+  /** 传给 KeyMap 的动作名，和键盘动作共用一套。 */
+  action: string;
+  /** 按键下方的小字，建议 2–4 个字。 */
+  label: string;
+}
+
+/**
+ * 虚拟手柄布局。只声明游戏真正需要的键：
+ * 贪吃蛇只有 D-pad，扫雷有 D-pad + A/B，打砖块有左右 + A。
+ */
+export interface PadSpec {
+  /** 十字键：none / lr（只有左右）/ four（四向）。默认 none。 */
+  dpad?: "none" | "lr" | "four";
+  /** 自定义方向动作，默认 left/right/up/down。 */
+  up?: string;
+  down?: string;
+  left?: string;
+  right?: string;
+  /** A 键（主操作）。 */
+  a?: PadButtonSpec;
+  /** B 键（次操作）。 */
+  b?: PadButtonSpec;
+  /** 是否显示 START（开始/暂停），默认 true。 */
+  start?: boolean;
+}
+
 export interface GameMeta {
   /** 唯一 id，同时是存档 key。 */
   id: string;
@@ -38,6 +66,8 @@ export interface GameMeta {
   autoFullscreen?: boolean;
   /** 空格键归谁：'pause'（默认）或 'action'（游戏用）。 */
   spaceAction?: "pause" | "action";
+  /** 虚拟手柄布局；不写则不显示手柄。 */
+  pad?: PadSpec;
   /** 首页缩略图：80×50 逻辑像素，t 为秒。 */
   drawThumb(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void;
 }
@@ -98,6 +128,8 @@ export interface GameContext {
   end: (result: GameResult) => void;
   /** 当前是否处于暂停（游戏可用来跳过动画）。 */
   isPaused: () => boolean;
+  /** 虚拟手柄是否正在显示（游戏可据此隐藏画布内的触屏按钮）。 */
+  padVisible: () => boolean;
   /** 调色板里的颜色，写起来短一点。 */
   color: (key: PaletteKey) => string;
 }

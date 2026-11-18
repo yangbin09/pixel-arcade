@@ -53,6 +53,9 @@ export const meta: GameMeta = {
   duration: "2–4 分钟",
   tags: ["敌机 10/20/30", "每波加速", "3 条命"],
   size: { w: 168, h: 210 },
+  pad: {
+    dpad: "lr",
+  },
   scoreMode: "high",
   hud: [
     { key: "score", label: "分数", kind: "number", pad: 5, minChars: 5, tone: "score" },

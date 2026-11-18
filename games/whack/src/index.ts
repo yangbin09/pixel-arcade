@@ -16,6 +16,7 @@ import {
 } from "@arcade/core";
 
 import { drawHammer, drawHoleBack, drawHoleFront, drawMole, drawSparkle, paintGrass } from "./art";
+import { CURSOR_COLS, CURSOR_HOME, CURSOR_ROWS, moveCursor } from "./logic";
 import { meta } from "./meta";
 
 const W = 168;
@@ -86,6 +87,8 @@ const game = defineGame({
     let level = -1;
     let lastTier = 1;
     let holes: (Mole | null)[] = new Array(9).fill(null);
+    /** 键盘 / 虚拟手柄光标：0–8，默认中间格。 */
+    let cursor = CURSOR_HOME;
     let hover = { x: 0, y: 0, inside: false };
     let strike: { x: number; y: number; until: number } | null = null;
     let markCell = -1;
@@ -275,6 +278,7 @@ const game = defineGame({
       level = -1;
       lastTier = 1;
       holes = new Array(9).fill(null);
+      cursor = CURSOR_HOME;
       particles = [];
       popups = [];
       shake = 0;
@@ -510,6 +514,41 @@ const game = defineGame({
       ctx.ctx.restore();
     };
 
+    /**
+     * 虚拟手柄光标：只画土坑四角的 2px 短角标，贴在外圈泥环上，
+     * 地鼠本体（半宽最大 14px）和耳朵都在角标内侧，不会被遮住。
+     */
+    const drawPadCursor = (): void => {
+      if (mode !== "playing" || !ctx.padVisible()) return;
+
+      const cell = cellRect(cursor);
+      const left = cell.cx - 24;
+      const right = cell.cx + 24;
+      const top = cell.cy - 8;
+      const bottom = cell.cy + 12;
+      const arm = 6;
+      const c = ctx.ctx;
+
+      c.save();
+      c.fillStyle = P.gold;
+      c.fillRect(left, top, arm, 2);
+      c.fillRect(left, top, 2, arm);
+      c.fillRect(right - arm + 1, top, arm, 2);
+      c.fillRect(right - 1, top, 2, arm);
+      c.fillRect(left, bottom - 1, arm, 2);
+      c.fillRect(left, bottom - arm + 1, 2, arm);
+      c.fillRect(right - arm + 1, bottom - 1, arm, 2);
+      c.fillRect(right - 1, bottom - arm + 1, 2, arm);
+
+      // 角尖点一颗奶油色像素，金色在草地上更跳。
+      c.fillStyle = P.cream;
+      c.fillRect(left, top, 2, 2);
+      c.fillRect(right - 1, top, 2, 2);
+      c.fillRect(left, bottom - 1, 2, 2);
+      c.fillRect(right - 1, bottom - 1, 2, 2);
+      c.restore();
+    };
+
     const drawMoleAt = (index: number, mole: Mole): void => {
       const c = cellRect(index);
       let offset = 0;
@@ -676,6 +715,8 @@ const game = defineGame({
 
       if (frontLayer) c.drawImage(frontLayer, 0, 0);
 
+      drawPadCursor();
+
       drawParticles();
 
       if (flash > 0) {
@@ -708,8 +749,11 @@ const game = defineGame({
       } else {
         hover.inside = false;
       }
+      const index = cellAt(info.x, info.y);
+      // 点过哪一格，手柄光标就停在哪一格，下一次 A 键不会敲偏。
+      if (index >= 0) cursor = index;
       strike = { x: info.x, y: info.y, until: clock + 155 };
-      tapAt(info.x, info.y);
+      tapAt(info.x, info.y, index >= 0 ? index : undefined);
     });
 
     ctx.input.pointer.on("move", (info) => {
@@ -732,9 +776,22 @@ const game = defineGame({
     });
 
     ctx.input.keys.onPress((action) => {
-      if (!action.startsWith("slot")) return;
-      const index = Number(action.slice(4)) - 1;
-      if (index >= 0 && index < 9) keyStrike(index);
+      if (action.startsWith("slot")) {
+        const index = Number(action.slice(4)) - 1;
+        if (index >= 0 && index < 9) keyStrike(index);
+        return;
+      }
+
+      if (action === "left" || action === "right" || action === "up" || action === "down") {
+        hover.inside = false;
+        cursor = moveCursor(cursor, action, CURSOR_COLS, CURSOR_ROWS);
+        return;
+      }
+
+      if (action === "action") {
+        hover.inside = false;
+        keyStrike(cursor);
+      }
     });
 
     buildStaticLayers();

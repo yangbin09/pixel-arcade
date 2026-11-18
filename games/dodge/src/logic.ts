@@ -130,6 +130,40 @@ export function clampShipY(y: number): number {
   return clamp(y, half + 3.5, H - half - 3.5);
 }
 
+/** 触摸相对拖动的灵敏度：手指走 1px，飞船走 1.15px。 */
+export const DRAG_SENSITIVITY = 1.15;
+
+/** 一次触摸拖动的锚点：手指起点 + 按下瞬间的飞船位置。 */
+export interface TouchDragAnchor {
+  startX: number;
+  startY: number;
+  shipX: number;
+  shipY: number;
+}
+
+/** 记录触摸拖动锚点，不移动飞船（手指可以按在离飞船很远的地方）。 */
+export function touchDragAnchor(
+  pointerX: number,
+  pointerY: number,
+  shipX: number,
+  shipY: number,
+): TouchDragAnchor {
+  return { startX: pointerX, startY: pointerY, shipX, shipY };
+}
+
+/** 相对拖动目标：锚点 + 手指位移 × 灵敏度，再夹到飞船活动范围内。 */
+export function touchDragTarget(
+  anchor: TouchDragAnchor,
+  pointerX: number,
+  pointerY: number,
+  sensitivity = DRAG_SENSITIVITY,
+): { x: number; y: number } {
+  return {
+    x: clampShipX(anchor.shipX + (pointerX - anchor.startX) * sensitivity),
+    y: clampShipY(anchor.shipY + (pointerY - anchor.startY) * sensitivity),
+  };
+}
+
 /** 点到矩形的最短距离（在矩形内为 0）。 */
 export function pointRectDistance(
   px: number,

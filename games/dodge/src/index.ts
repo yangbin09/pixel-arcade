@@ -37,8 +37,11 @@ import {
   speedStageFor,
   stepParticles,
   survivalTicksFor,
+  touchDragAnchor,
+  touchDragTarget,
   type Meteor,
   type ShieldDrop,
+  type TouchDragAnchor,
 } from "./logic";
 import { meta } from "./meta";
 
@@ -103,6 +106,9 @@ const game = defineGame({
 
     let particleCursor = 0;
     let popupCursor = 0;
+
+    /** 触摸 / 笔的拖动锚点；鼠标不走相对拖动，保持绝对跟随。 */
+    let drag: TouchDragAnchor | null = null;
 
     const meteors = createMeteorPool();
     const particles = createParticlePool();
@@ -375,6 +381,7 @@ const game = defineGame({
       lastSecond = -1;
       particleCursor = 0;
       popupCursor = 0;
+      drag = null;
 
       for (let i = 0; i < meteors.length; i += 1) meteors[i]!.alive = false;
       for (let i = 0; i < particles.length; i += 1) particles[i]!.alive = false;
@@ -492,15 +499,35 @@ const game = defineGame({
     ctx.input.pointer.on("down", (info) => {
       ctx.audio.unlock();
       if (mode !== "playing" || ctx.isPaused()) return;
-      if (info.source.pointerType === "mouse" && info.source.button !== 0) return;
-      moveShipTo(info.x, info.y);
+      if (info.source.pointerType === "mouse") {
+        if (info.source.button !== 0) return;
+        drag = null;
+        moveShipTo(info.x, info.y);
+        return;
+      }
+      // 触摸 / 笔：只记锚点，不从手指位置开始，避免手指盖住飞船。
+      drag = touchDragAnchor(info.x, info.y, shipX, shipY);
     });
 
     ctx.input.pointer.on("move", (info) => {
       if (mode !== "playing" || ctx.isPaused()) return;
-      // 触屏拖动、鼠标悬停都直接跟随，手指不用按在飞船上。
-      moveShipTo(info.x, info.y);
+      if (info.source.pointerType === "mouse") {
+        drag = null;
+        moveShipTo(info.x, info.y);
+        return;
+      }
+      if (!drag || !info.down) return;
+      const next = touchDragTarget(drag, info.x, info.y);
+      shipX = next.x;
+      shipY = next.y;
     });
+
+    const endDrag = (): void => {
+      drag = null;
+    };
+    ctx.input.pointer.on("up", endDrag);
+    ctx.input.pointer.on("cancel", endDrag);
+    ctx.input.pointer.on("leave", endDrag);
 
     buildBackdrop();
     resetRun();

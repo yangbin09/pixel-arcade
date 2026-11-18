@@ -2,4 +2,7 @@
 @import "./base.css";
 @import "./play.css";
 @import "./play-extras.css";
+@import "./console.css";
+@import "./pad-collapse.css";
+@import "./install.css";
 @import "./motion.css";

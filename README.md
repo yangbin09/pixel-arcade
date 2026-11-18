@@ -3,8 +3,9 @@
 十款小游戏的浏览器合集。零下载、零登录、零外部素材：所有画面都是 Canvas 像素画，
 所有音效都是 WebAudio 现场合成，所有成绩只存在本机。
 
-- 竖屏优先，触屏 / 键盘双通路
-- **全屏运行**：原生全屏 + iPhone 沉浸回退 + 自动锁竖屏 + 屏幕唤醒锁
+- 竖屏优先，触屏 / 键盘 / 虚拟手柄三通路
+- **复古掌机外壳**：机台边框、CRT 扫描线、开机动画，PAD / CRT 可开关
+- **全屏运行**：原生全屏 + 自动锁竖屏 + 屏幕唤醒锁；iPhone 可「添加到主屏幕」获得真全屏
 - 纯静态产物：`vite build` → 一个 `dist/`，Docker 里用 nginx 托管
 - 多模块：引擎、样式、UI、清单、10 个游戏各自独立，按需拆包加载
 
@@ -52,7 +53,8 @@ npm run docker:up        # docker compose up -d --build
 长缓存只给带 hash 的 `assets/`，HTML 永远 `no-cache`。
 
 局域网手机测试：`docker compose up` 后访问 `http://<电脑IP>:8080`，
-点开始会自动进全屏（iPhone Safari 走沉浸模式）。
+点开始会自动进全屏。iPhone Safari 不支持网页元素全屏，按提示「添加到主屏幕」
+从桌面打开才是没有地址栏/底栏的真全屏。
 
 ### 部署到 VPS
 
@@ -134,14 +136,34 @@ ssh root@<ip> 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-available/ga
 | 设备 | 行为 |
 |---|---|
 | 桌面 Chrome/Edge、Android、iPad | `requestFullscreen({ navigationUI: "hide" })` + `orientation.lock("portrait")` |
-| iPhone Safari（不支持元素全屏） | `body.is-immersive`：`100dvh` + 隐藏页框 + safe-area |
+| iPhone Safari（不支持元素全屏） | `body.is-immersive`：`100dvh` + 隐藏页框 + safe-area；底栏是浏览器 UI，网页无法隐藏 |
 | 都不支持 | 画布放到最大，提示用 F11 |
 
+**iPhone 的真全屏**：Safari 不允许网页隐藏地址栏/底栏。唯一稳定的方案是
+「分享 → 添加到主屏幕」，从桌面以 PWA 打开：没有地址栏和底栏，状态栏与
+home indicator 仍在（系统 UI）。首次进游戏会自动弹一次像素风引导；
+点全屏按钮也会再打开。主屏幕版是独立存储，最高分和 Safari 不互通。
+
 - 触屏设备点「开始游戏」会在同一个用户手势里顺带请求全屏（成功率最高）。
-- 全屏时顶栏 2.6 秒后自动淡出，触摸/移动/按键唤回；HUD 与计时条常显。
+- 全屏时顶栏 2.6 秒后自动收起（真正释放高度），触摸/移动/按键唤回；HUD 与计时条常显。
+- iPhone 非 PWA 时给手柄预留约 50px 底部空间，避免 D-pad 被 Safari 底栏压住。
 - 进入全屏申请 `navigator.wakeLock('screen')`，切后台或退出时释放。
 - 退出全屏、切后台、来电都会自动暂停，回来先看到暂停面板。
 - 键盘：`F` 全屏、`P` / 空格 暂停、`M` 静音、`Esc` 退出全屏或暂停。
+
+## 虚拟手柄与机台
+
+每款游戏在 `meta.ts` 里声明 `pad`，壳层统一画 D-pad、A/B、START：
+
+- 所有 10 款游戏都有手柄布局；没有操作的键不会显示。
+- DOM 按钮，天生支持多指（比如俄罗斯方块一边按住左、一边点旋转）。
+- 同一动作被两个键按住时用计数处理，不会提前松开。
+- Android 用 `navigator.vibrate` 给短振动；iOS 用极短的 WebAudio 按键音。
+- 机台顶部 **PAD** 开关收起/展开手柄，**CRT** 开关扫描线与暗角；
+  两个状态都写进 `pixelArcade.setting.*`。
+- 画面内的触屏按钮/光标可以用 `ctx.padVisible()` 判断是否显示。
+
+写新游戏时看 `docs/GAME_API.md` 的「虚拟手柄」一节。
 
 ## 存档
 
@@ -152,15 +174,18 @@ ssh root@<ip> 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-available/ga
 | `pixelArcade.<game>.best` | 高分模式最佳 |
 | `pixelArcade.<game>.best.low` | 低分模式最佳（用时/步数） |
 | `pixelArcade.muted` | 音效开关 |
+| `pixelArcade.setting.pad` | 虚拟手柄开关 |
+| `pixelArcade.setting.crt` | CRT 扫描线开关 |
+| `pixelArcade.setting.pwa.tip` | iPhone 安装引导是否已读 |
 | `pixelArcade.setting.*` | 其他设置 |
 | `pixelArcade.schema` | 存档版本 |
 
 ## 测试
 
 ```bash
-npm test                       # 引擎与各游戏纯逻辑单测
+npm test                       # 引擎与各游戏纯逻辑单测（200+ 条）
 npm run build && npm run preview
-node scripts/smoke.mjs         # 无头 Chrome：逐个打开 10 个游戏，检查报错/尺寸/HUD 并截图
+node scripts/smoke.mjs         # 无头 Chrome：逐个打开 10 个游戏，检查报错/尺寸/HUD/手柄并截图
 ```
 
 冒烟脚本输出到 `.artifacts/smoke/`：每个游戏的 `ready` 与 `play` 截图，

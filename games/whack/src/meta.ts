@@ -47,6 +47,10 @@ export const meta: GameMeta = {
   duration: "30 秒一局",
   tags: ["地鼠 +10", "金鼠 +30", "连击 5 / 10 / 20 → ×2 / ×3 / ×4"],
   size: { w: 168, h: 168 },
+  pad: {
+    dpad: "four",
+    a: { action: "action", label: "敲" },
+  },
   scoreMode: "high",
   scoreLabel: "本局得分",
   bestLabel: "历史最高",

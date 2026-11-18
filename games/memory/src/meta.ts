@@ -66,6 +66,10 @@ export const meta: GameMeta = {
   duration: "30 秒–2 分钟",
   tags: ["配对成功 +1", "翻错扣步", "用时越短越好"],
   size: { w: 168, h: 168 },
+  pad: {
+    dpad: "four",
+    a: { action: "action", label: "翻开" },
+  },
   scoreMode: "low",
   scoreLabel: "用时（秒）",
   bestLabel: "最快纪录",

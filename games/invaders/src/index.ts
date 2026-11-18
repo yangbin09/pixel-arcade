@@ -45,9 +45,12 @@ import {
   enemyY,
   marchStep,
   sweptHit,
+  touchDragAnchor,
+  touchDragTarget,
   waveFireInterval,
   waveSpeed,
   type MarchState,
+  type TouchDragAnchor,
 } from "./logic";
 
 const MAX_PARTICLES = 120;
@@ -107,6 +110,9 @@ const game = defineGame({
     let shipX = FIELD_W / 2;
     let invulnUntil = 0;
     let finished = false;
+
+    /** 触摸 / 笔的横向拖动锚点；鼠标保持绝对跟随。 */
+    let drag: TouchDragAnchor | null = null;
 
     /** 编队整体的横移状态与下压量。 */
     let formation: MarchState = { offset: 0, dir: 1 };
@@ -301,6 +307,7 @@ const game = defineGame({
       shipX = FIELD_W / 2;
       invulnUntil = 0;
       finished = false;
+      drag = null;
 
       formation = { offset: 0, dir: 1 };
       formOffsetY = 0;
@@ -530,10 +537,34 @@ const game = defineGame({
 
     ctx.input.pointer.on("down", (info) => {
       ctx.audio.unlock();
-      followPointer(info);
+      if (mode !== "playing" || ctx.isPaused()) return;
+      if (info.source.pointerType === "mouse") {
+        drag = null;
+        followPointer(info);
+        return;
+      }
+      // 触摸 / 笔：只记锚点，飞船从当前位置开始做相对位移。
+      drag = touchDragAnchor(info.x, shipX);
     });
-    // 悬停也跟随，桌面和触屏手感一致。
-    ctx.input.pointer.on("move", followPointer);
+
+    ctx.input.pointer.on("move", (info) => {
+      if (mode !== "playing" || ctx.isPaused()) return;
+      // 鼠标悬停仍然绝对跟随。
+      if (info.source.pointerType === "mouse") {
+        drag = null;
+        shipX = clampShipX(info.x);
+        return;
+      }
+      if (!drag || !info.down) return;
+      shipX = touchDragTarget(drag, info.x);
+    });
+
+    const endDrag = (): void => {
+      drag = null;
+    };
+    ctx.input.pointer.on("up", endDrag);
+    ctx.input.pointer.on("cancel", endDrag);
+    ctx.input.pointer.on("leave", endDrag);
 
     /* ---------------- 初始化 ---------------- */
 

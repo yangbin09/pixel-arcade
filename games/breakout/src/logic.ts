@@ -173,6 +173,30 @@ export function clampPaddleX(x: number, width = PADDLE_W): number {
   return Math.max(min, Math.min(max, x));
 }
 
+/** 触摸相对拖动的灵敏度：手指横移 1px，挡板走 1.35px。 */
+export const DRAG_SENSITIVITY = 1.35;
+
+/** 一次触摸拖动的锚点：手指起点 + 按下瞬间的挡板左边缘。 */
+export interface TouchDragAnchor {
+  startX: number;
+  paddleX: number;
+}
+
+/** 记录触摸拖动锚点，不移动挡板（按下只负责发球）。 */
+export function touchDragAnchor(pointerX: number, paddleX: number): TouchDragAnchor {
+  return { startX: pointerX, paddleX };
+}
+
+/** 相对拖动目标：锚点 + 手指横移 × 灵敏度，再按当前挡板宽度夹进场地。 */
+export function touchDragTarget(
+  anchor: TouchDragAnchor,
+  pointerX: number,
+  width = PADDLE_W,
+  sensitivity = DRAG_SENSITIVITY,
+): number {
+  return clampPaddleX(anchor.paddleX + (pointerX - anchor.startX) * sensitivity, width);
+}
+
 export function paddleRect(x: number, width: number, y = PADDLE_Y): Rect {
   return { x, y, w: width, h: PADDLE_H };
 }

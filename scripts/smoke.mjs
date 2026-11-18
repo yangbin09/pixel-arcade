@@ -128,6 +128,10 @@ const chrome = spawn(
     "--hide-scrollbars",
     "--disable-extensions",
     "--mute-audio",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding",
+    "--disable-features=CalculateNativeWinOcclusion",
     "--force-device-scale-factor=1",
     "about:blank",
   ],
@@ -142,6 +146,7 @@ try {
     await fetch(`http://127.0.0.1:${PORT}/json/new?${encodeURIComponent("about:blank")}`, { method: "PUT" })
   ).json();
   const client = await connect(target.webSocketDebuggerUrl);
+  await client.send("Page.bringToFront");
 
   await client.send("Page.enable");
   await client.send("Runtime.enable");
@@ -228,6 +233,10 @@ try {
             dy: Math.round(fr.top - sr.top),
             backing: f.width + 'x' + f.height,
           },
+          pad: {
+            visible: !document.querySelector('#pad').classList.contains('is-collapsed'),
+            buttons: [...document.querySelectorAll('#pad button')].map((b) => b.getAttribute('aria-label')),
+          },
         };
       })()`,
     );
@@ -259,16 +268,21 @@ try {
           overlayHidden: document.querySelector('#overlay').hidden,
           hud: [...document.querySelectorAll('.stat')].map((st) => st.querySelector('canvas')?.getAttribute('aria-label')),
           hasErrorPanel: !document.querySelector('[data-panel="result"]')?.hidden,
+          bodyClass: document.body.className,
+          nativeFs: !!document.fullscreenElement,
+          shellClass: document.querySelector('#shell').className,
+          topbarH: Math.round(document.querySelector('#topbar').getBoundingClientRect().height),
+          screen: (() => { const r = document.querySelector('#screen').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })(),
+          field: (() => { const r = document.querySelector('#field').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })(),
+          frame: (() => { const r = document.querySelector('#screenFrame').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; })(),
         }))()`,
       );
       if (playing.state === "playing" || playing.state === "over") break;
     }
 
-    await shoot(`${id}-play`);
-
-    // 暂停 / 恢复：验证壳层状态机对每个游戏都成立
+    // 先暂停：把游戏冻结住，布局截图不会被 snake 撞墙 / 白块落地干扰。
     await evaluate(client, `document.querySelector('#pauseBtn').click()`);
-    await sleep(350);
+    await sleep(250);
     const paused = await evaluate(
       client,
       `(() => ({
@@ -278,7 +292,40 @@ try {
       }))()`,
     );
     await shoot(`${id}-pause`);
-    await evaluate(client, `document.querySelector('[data-action="resume"]').click()`);
+
+    // 隐藏暂停面板、强制顶栏最终态，截一张稳定的布局图。
+    // 真实浏览器里顶栏由 shell 的 2.6s 定时器收起；无头标签会节流 setTimeout。
+    await evaluate(
+      client,
+      `document.querySelector('#overlay').hidden = true;
+       document.querySelector('#shell').classList.add('is-chrome-hidden')`,
+    );
+    await sleep(320);
+    const finalLayout = await evaluate(
+      client,
+      `(() => {
+        const s = document.querySelector('#screen').getBoundingClientRect();
+        const f = document.querySelector('#field').getBoundingClientRect();
+        const fr = document.querySelector('#screenFrame').getBoundingClientRect();
+        return {
+          topbarH: Math.round(document.querySelector('#topbar').getBoundingClientRect().height),
+          hudH: Math.round(document.querySelector('#hud').getBoundingClientRect().height),
+          padH: Math.round(document.querySelector('#pad').getBoundingClientRect().height),
+          cabinetH: Math.round(document.querySelector('#cabinet').getBoundingClientRect().height),
+          screen: [Math.round(s.width), Math.round(s.height)],
+          field: [Math.round(f.width), Math.round(f.height)],
+          frame: [Math.round(fr.width), Math.round(fr.height)],
+        };
+      })()`,
+    );
+    await shoot(`${id}-play`);
+
+    // 恢复暂停面板并继续
+    await evaluate(
+      client,
+      `document.querySelector('#overlay').hidden = false;
+       document.querySelector('[data-action="resume"]').click()`,
+    );
     await sleep(350);
     const resumed = await evaluate(
       client,
@@ -356,14 +403,64 @@ try {
     );
     await shoot(`${id}-after-input`);
 
+    // 机台开关：PAD / CRT 收起再打开，确认状态和 aria 同步
+    const toggles = await evaluate(
+      client,
+      `(() => {
+        const pad = document.querySelector('#pad');
+        const padBtn = document.querySelector('#padToggle');
+        const crtBtn = document.querySelector('#crtToggle');
+        const before = { pad: !pad.classList.contains('is-collapsed'), crt: document.body.classList.contains('is-crt') };
+        padBtn.click();
+        const padOff = {
+          collapsed: pad.classList.contains('is-collapsed'),
+          controlsHidden: document.querySelector('.pad-controls')?.hidden,
+          checked: padBtn.getAttribute('aria-checked'),
+        };
+        padBtn.click();
+        crtBtn.click();
+        const crtOff = { crt: document.body.classList.contains('is-crt'), checked: crtBtn.getAttribute('aria-checked') };
+        crtBtn.click();
+        return {
+          before,
+          padOff,
+          crtOff,
+          after: { pad: !pad.classList.contains('is-collapsed'), crt: document.body.classList.contains('is-crt') },
+        };
+      })()`,
+    );
+
+    // 收起手柄的最终布局：屏幕应该吃掉拉手让出的高度
+    await evaluate(client, `document.querySelector('#padToggle').click()`);
+    await sleep(260);
+    const collapsedLayout = await evaluate(
+      client,
+      `(() => {
+        const s = document.querySelector('#screen').getBoundingClientRect();
+        const f = document.querySelector('#field').getBoundingClientRect();
+        return {
+          collapsed: document.querySelector('#pad').classList.contains('is-collapsed'),
+          handleH: Math.round(document.querySelector('.pad-handle').getBoundingClientRect().height),
+          screen: [Math.round(s.width), Math.round(s.height)],
+          field: [Math.round(f.width), Math.round(f.height)],
+        };
+      })()`,
+    );
+    await shoot(`${id}-pad-collapsed`);
+    await evaluate(client, `document.querySelector('#padToggle').click()`);
+    await sleep(120);
+
     report.push({
       game: id,
       ready,
       started: started.clicked,
       playing,
+      finalLayout,
       paused,
       resumed,
       afterInput,
+      toggles,
+      collapsedLayout,
       errors: [...errors],
     });
 

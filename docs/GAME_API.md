@@ -112,9 +112,43 @@ interface GameMeta {
   countdown?: boolean;   // 默认 true，壳层画 3-2-1
   autoFullscreen?: boolean;         // 默认 true，触屏点开始自动全屏
   spaceAction?: "pause" | "action"; // 空格归谁，默认 pause
+  pad?: PadSpec;         // 虚拟手柄布局，见下
   drawThumb(ctx, w, h, t): void;    // 80×50 逻辑像素，t 为秒
 }
 ```
+
+## 虚拟手柄
+
+每款游戏在 `meta.ts` 里声明自己需要哪些键，壳层负责画出来、处理多指和触感。
+动作名和键盘共用一套（`left/right/up/down/action/primary/secondary/slot1…`）。
+
+```ts
+interface PadSpec {
+  dpad?: "none" | "lr" | "four"; // 默认 none；lr 只有左右，four 是四向
+  up?: string;                   // 自定义方向动作，默认 up/down/left/right
+  down?: string;
+  left?: string;
+  right?: string;
+  a?: { action: string; label: string }; // A 键：大字母 + 下方 2–4 字标签
+  b?: { action: string; label: string }; // B 键
+  start?: boolean;               // 默认 true，显示 START（准备界面开局 / 游戏中暂停）
+}
+```
+
+示例（俄罗斯方块）：
+
+```ts
+pad: {
+  dpad: "four",
+  a: { action: "up", label: "旋转" },     // 和 ↑ 同一个动作
+  b: { action: "action", label: "落下" },
+}
+```
+
+- 游戏不需要知道手柄在哪个位置；按下时壳层会调用 `KeyMap.press(action)`，和键盘走同一条通路。
+- 同一个动作被两个键同时按住时，壳层用计数避免提前松开。
+- 画布内的触屏按钮/光标可以用 `ctx.padVisible()` 判断是否要显示，避免和手柄重复。
+- 玩家可以在机台顶部用 PAD 开关收起手柄，状态存在 `pixelArcade.setting.pad`。
 
 ## HUD
 
@@ -164,6 +198,9 @@ ctx.input.keys.isDown("left");
 
 // 滑动：方向识别，触屏和鼠标拖拽都行
 ctx.input.swipe.onSwipe(({ direction, dx, dy, duration }) => {});
+
+// 虚拟手柄当前是否显示（用于隐藏画布内的触屏按钮/光标）
+ctx.padVisible();
 ```
 
 默认键位：`方向键/WASD → left/right/up/down`，`Enter → action`，

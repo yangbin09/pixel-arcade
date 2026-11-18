@@ -8,6 +8,8 @@
  * 额外：进入全屏时尝试锁定竖屏、申请屏幕唤醒锁，退出/切后台自动释放。
  */
 
+import { isIPhone, isStandalone } from "./install";
+
 type FsElement = HTMLElement & {
   webkitRequestFullscreen?: () => Promise<void> | void;
 };
@@ -47,6 +49,13 @@ export class FullscreenController {
   get canNative(): boolean {
     const el = this.target as FsElement;
     return typeof el.requestFullscreen === "function" || typeof el.webkitRequestFullscreen === "function";
+  }
+
+  /** iPhone Safari 等：没有原生全屏，只能靠「添加到主屏幕」。 */
+  get needsInstallGuide(): boolean {
+    if (isStandalone()) return false;
+    // iPhone 上即使某些 WebView 暴露了 requestFullscreen，也不要在页面内假装全屏
+    return isIPhone() || !this.canNative;
   }
 
   get native(): boolean {

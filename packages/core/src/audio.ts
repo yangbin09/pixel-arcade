@@ -115,6 +115,12 @@ export const Sound = {
     Sound.tone(480, 0.035, "square", 0.045);
   },
 
+  /** 虚拟手柄：比 ui 更短更轻，连按不刺耳。 */
+  pad(): void {
+    if (!Sound.active()) return;
+    Sound.tone(560, 0.025, "square", 0.022);
+  },
+
   tick(step = 1): void {
     if (!Sound.active()) return;
     const freq = step === 1 ? 960 : step === 2 ? 780 : 620;

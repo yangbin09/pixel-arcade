@@ -7,6 +7,8 @@ import { PixelSurface } from "./render/surface";
 import { PointerInput } from "./input/pointer";
 import { KeyMap } from "./input/keys";
 import { SwipeInput } from "./input/swipe";
+import { Pad } from "./input/pad";
+import { InstallGuide, detectPlatform, isStandalone } from "./install";
 import { P } from "./palette";
 import { Sound } from "./audio";
 import { Store } from "./store";
@@ -64,6 +66,7 @@ export class PlayShell {
 
   private readonly shell: HTMLElement;
   private readonly screen: HTMLElement;
+  private readonly cabinet: HTMLElement;
   private readonly topbar: HTMLElement;
   private readonly field: HTMLCanvasElement;
   private readonly fx: HTMLCanvasElement;
@@ -72,6 +75,8 @@ export class PlayShell {
   private readonly muteBtn: HTMLButtonElement;
   private readonly pauseBtn: HTMLButtonElement;
   private readonly fsBtn: HTMLButtonElement;
+  private readonly padToggle: HTMLButtonElement;
+  private readonly crtToggle: HTMLButtonElement;
   private readonly overlay: Overlay;
   private readonly toast: Toast;
   private readonly hud: Hud;
@@ -83,6 +88,8 @@ export class PlayShell {
   private readonly pointer: PointerInput;
   private readonly keys: KeyMap;
   private readonly swipe: SwipeInput;
+  private readonly pad: Pad;
+  private readonly install: InstallGuide;
 
   private game: GameInstance | null = null;
   private raf = 0;
@@ -93,6 +100,10 @@ export class PlayShell {
   private cdSecond = 0;
   private errorShown = false;
   private chromeTimer = 0;
+  private resizeRaf = 0;
+  private bootTimer = 0;
+  private guideTimer = 0;
+  private lastDpr = window.devicePixelRatio || 1;
   private readonly cleanup: (() => void)[] = [];
 
   constructor(options: PlayShellOptions) {
@@ -102,6 +113,7 @@ export class PlayShell {
 
     this.shell = must<HTMLElement>("#shell");
     this.screen = must<HTMLElement>("#screen");
+    this.cabinet = must<HTMLElement>("#cabinet");
     this.topbar = must<HTMLElement>("#topbar");
     this.field = must<HTMLCanvasElement>("#field");
     this.fx = must<HTMLCanvasElement>("#fx");
@@ -110,12 +122,23 @@ export class PlayShell {
     this.muteBtn = must<HTMLButtonElement>("#muteBtn");
     this.pauseBtn = must<HTMLButtonElement>("#pauseBtn");
     this.fsBtn = must<HTMLButtonElement>("#fsBtn");
+    this.padToggle = must<HTMLButtonElement>("#padToggle");
+    this.crtToggle = must<HTMLButtonElement>("#crtToggle");
+
+    document.documentElement.classList.toggle("is-standalone", isStandalone());
+    document.body.classList.toggle("is-standalone", isStandalone());
+    const platform = detectPlatform();
+    document.body.classList.toggle("is-ios-browser", platform === "ios" || platform === "ios-inapp");
 
     const meta = this.meta;
     document.title = `${meta.title} · PIXEL ARCADE 小游戏合集`;
     must<HTMLElement>("#gameTitle").textContent = meta.title;
     must<HTMLElement>("#gameTagline").textContent = meta.tagline;
-    this.screen.style.setProperty("--screen-ratio", `${meta.size.w} / ${meta.size.h}`);
+    this.shell.style.setProperty("--screen-ratio", `${meta.size.w} / ${meta.size.h}`);
+    this.shell.style.setProperty("--screen-w", String(meta.size.w));
+    this.shell.style.setProperty("--screen-h", String(meta.size.h));
+    // 1:2 的 blocks 和 1:1 的 whack 用不同的屏幕/手柄尺寸策略
+    this.cabinet.dataset.ratio = meta.size.h > meta.size.w * 1.5 ? "tall" : "wide";
     this.field.setAttribute("aria-label", `${meta.title}．${meta.howto}`);
     const back = must<HTMLAnchorElement>("#backLink");
     back.href = this.homeHref;
@@ -125,24 +148,44 @@ export class PlayShell {
     this.hud = new Hud(must<HTMLElement>("#hud"), meta.hud);
     this.timerWrap.hidden = true;
 
-    this.surface = new PixelSurface(this.field, meta.size.w, meta.size.h, this.screen);
-    this.fxSurface = new PixelSurface(this.fx, meta.size.w, meta.size.h, this.screen);
+    this.surface = new PixelSurface(this.field, meta.size.w, meta.size.h, this.screen, {
+      alpha: false,
+      desynchronized: true,
+    });
+    this.fxSurface = new PixelSurface(this.fx, meta.size.w, meta.size.h, this.screen, {
+      alpha: true,
+      desynchronized: true,
+    });
 
     this.pointer = new PointerInput(this.field, this.surface);
     this.swipe = new SwipeInput(this.field, { threshold: 22 });
     const bindings = { ...DEFAULT_BINDINGS };
     if ((meta.spaceAction ?? "pause") === "action") bindings["space"] = "action";
     this.keys = new KeyMap(bindings);
+    this.pad = new Pad(must<HTMLElement>("#pad"), meta.pad, this.keys, {
+      onStart: () => this.onPadStart(),
+      onToggle: (visible) => this.setPadVisible(visible),
+    });
+    if (meta.pad) this.pad.setVisible(Store.flag("pad", true));
+    document.body.classList.toggle("is-crt", Store.flag("crt", true));
 
+    this.install = new InstallGuide();
     this.fullscreen = new FullscreenController(this.shell);
 
     this.fillNotes();
     paintAllIcons(document);
     this.bindChrome();
+    this.bindCabinet();
     this.bindGlobalKeys();
     this.bindOverlay();
     this.bindFullscreen();
     this.bindVisibility();
+    this.syncCabinetSwitches();
+
+    if (!prefersReducedMotion()) {
+      this.cabinet.classList.add("is-booting");
+      this.bootTimer = window.setTimeout(() => this.cabinet.classList.remove("is-booting"), 760);
+    }
 
     // 建立游戏实例（此时还不能 update，但可以先画静态画面）
     this.hud.reset();
@@ -157,6 +200,11 @@ export class PlayShell {
     this.game.render();
     this.startLoop();
 
+    // iPhone Safari 没有元素全屏：第一次进游戏把「添加到主屏幕」讲清楚
+    this.guideTimer = window.setTimeout(() => {
+      if (this.fullscreen.needsInstallGuide) this.install.maybeShow();
+    }, 700);
+
     // 动态 import 的游戏可能在首次布局之后才挂载，补一次强制 re-fit
     requestAnimationFrame(() => {
       this.surface.schedule();
@@ -168,9 +216,17 @@ export class PlayShell {
   }
 
   private onResize = (): void => {
-    paintAllIcons(document);
-    this.hud.refresh();
-    this.game?.render();
+    if (this.resizeRaf) return;
+    this.resizeRaf = requestAnimationFrame(() => {
+      this.resizeRaf = 0;
+      const dpr = window.devicePixelRatio || 1;
+      if (dpr !== this.lastDpr) {
+        this.lastDpr = dpr;
+        paintAllIcons(document);
+      }
+      this.hud.refresh();
+      this.game?.render();
+    });
   };
 
   private makeContext(): GameContext {
@@ -198,6 +254,7 @@ export class PlayShell {
       announce: (message: string) => this.live.announce(message),
       end: (result: GameResult) => this.finish(result),
       isPaused: () => this.state === "paused",
+      padVisible: () => this.pad.visible,
       color: (key) => P[key],
     };
   }
@@ -236,6 +293,48 @@ export class PlayShell {
       this.shell.removeEventListener("pointerdown", this.revealChrome);
     });
     this.syncMuteIcon();
+  }
+
+  /** 机台上的两个小开关：虚拟手柄、CRT。 */
+  private bindCabinet(): void {
+    const onPad = (): void => this.setPadVisible(!this.pad.visible);
+    const onCrt = (): void => {
+      const next = !document.body.classList.contains("is-crt");
+      document.body.classList.toggle("is-crt", next);
+      Store.setFlag("crt", next);
+      this.syncCabinetSwitches();
+      this.toast.show(next ? "CRT 已开启" : "CRT 已关闭", { duration: 750 });
+      Sound.ui();
+    };
+    this.padToggle.addEventListener("click", onPad);
+    this.crtToggle.addEventListener("click", onCrt);
+    this.cleanup.push(() => {
+      this.padToggle.removeEventListener("click", onPad);
+      this.crtToggle.removeEventListener("click", onCrt);
+    });
+  }
+
+  /** 手柄展开/收起：拉手和机台开关共用。 */
+  private setPadVisible(visible: boolean): void {
+    if (!this.meta.pad) return;
+    this.pad.setVisible(visible);
+    Store.setFlag("pad", visible);
+    this.syncCabinetSwitches();
+    this.toast.show(visible ? "手柄已展开" : "手柄已收起", { duration: 750 });
+    Sound.ui();
+  }
+
+  private syncCabinetSwitches(): void {
+    this.padToggle.disabled = !this.meta.pad;
+    this.padToggle.setAttribute("aria-checked", String(this.pad.visible));
+    this.crtToggle.setAttribute("aria-checked", String(document.body.classList.contains("is-crt")));
+  }
+
+  private onPadStart(): void {
+    if (this.state === "ready") this.begin();
+    else if (this.state === "playing" || this.state === "countdown" || this.state === "paused") {
+      this.togglePause();
+    }
   }
 
   private bindGlobalKeys(): void {
@@ -397,6 +496,12 @@ export class PlayShell {
 
   begin(): void {
     if (this.state === "countdown" || this.state === "playing") return;
+    // 第一次在 iPhone 上开局：先把「添加到主屏幕」讲清楚，避免以为全屏坏了
+    if (this.fullscreen.needsInstallGuide && !Store.flag("pwa.tip", false)) {
+      window.clearTimeout(this.guideTimer);
+      this.install.show();
+      return;
+    }
     Sound.unlock();
     this.hud.reset();
     this.hud.urgent(false);
@@ -501,6 +606,12 @@ export class PlayShell {
 
   private async toggleFullscreen(): Promise<void> {
     Sound.unlock();
+    if (this.fullscreen.needsInstallGuide) {
+      // iPhone 没有元素全屏：先进入沉浸回退，再把「添加到主屏幕」讲清楚
+      await this.fullscreen.enter();
+      this.install.show();
+      return;
+    }
     await this.fullscreen.toggle();
   }
 
@@ -557,11 +668,16 @@ export class PlayShell {
     this.toast.destroy();
     this.hud.destroy();
     this.fullscreen.destroy();
+    this.pad.destroy();
+    this.install.destroy();
     this.live.destroy();
     for (const fn of this.cleanup) fn();
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("orientationchange", this.onResize);
     window.clearTimeout(this.chromeTimer);
+    window.clearTimeout(this.bootTimer);
+    window.clearTimeout(this.guideTimer);
+    if (this.resizeRaf) cancelAnimationFrame(this.resizeRaf);
   }
 
   /** 注意力提示：给游戏播报用（转发到 live region）。 */

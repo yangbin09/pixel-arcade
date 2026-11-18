@@ -78,6 +78,23 @@ export function lowestHittableAny(blocks: readonly Block[]): Block | null {
   return found;
 }
 
+/** 手柄没有选轨时的自动模式：不指定轨道，砸全场最下方。 */
+export const AUTO_LANE = -1;
+
+/**
+ * 手柄 A 键的目标块：优先选中轨道里最下方的可点方块；
+ * 选中轨道空着（或未选轨）时回退到全场最下方。
+ *
+ * 空轨道只回退、不判 miss —— 和空格键原来的手感一致。
+ */
+export function pickLaneTarget(blocks: readonly Block[], lane: number): Block | null {
+  if (lane >= 0) {
+    const onLane = lowestHittable(blocks, lane);
+    if (onLane) return onLane;
+  }
+  return lowestHittableAny(blocks);
+}
+
 /** 速度等级：每命中 10 块升一级，封顶 MAX_LEVEL（19）。 */
 export function speedLevelFor(hits: number): number {
   const level = 1 + Math.floor(Math.max(0, hits) / BLOCKS_PER_LEVEL);

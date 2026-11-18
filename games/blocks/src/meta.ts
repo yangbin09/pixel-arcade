@@ -85,6 +85,11 @@ export const meta: GameMeta = {
   duration: "3–8 分钟",
   tags: ["消行 100/300/500/800", "每 10 行升级", "硬降 +2/格"],
   size: { w: 200, h: 392 },
+  pad: {
+    dpad: "four",
+    a: { action: "up", label: "旋转" },
+    b: { action: "action", label: "落下" },
+  },
   scoreMode: "high",
   spaceAction: "action",
   countdown: false,

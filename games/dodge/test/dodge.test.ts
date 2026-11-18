@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DRAG_SENSITIVITY,
   GRAZE_POINTS,
   H,
   MAX_DROPS,
@@ -27,6 +28,8 @@ import {
   speedStageFor,
   stepParticles,
   survivalTicksFor,
+  touchDragAnchor,
+  touchDragTarget,
 } from "../src/logic";
 
 describe("陨石雨 · 难度曲线", () => {
@@ -161,5 +164,45 @@ describe("陨石雨 · 对象池", () => {
 
     stepParticles(particles, 100);
     expect(p.alive).toBe(false);
+  });
+});
+
+describe("陨石雨 · 触摸相对拖动", () => {
+  it("灵敏度为 1.15", () => {
+    expect(DRAG_SENSITIVITY).toBeCloseTo(1.15);
+  });
+
+  it("正向拖动按灵敏度放大位移", () => {
+    const anchor = touchDragAnchor(50, 40, 84, 100);
+    const target = touchDragTarget(anchor, 70, 60);
+
+    expect(target.x).toBeCloseTo(84 + 20 * 1.15);
+    expect(target.y).toBeCloseTo(100 + 20 * 1.15);
+  });
+
+  it("反向拖动同样按灵敏度放大", () => {
+    const anchor = touchDragAnchor(50, 40, 84, 100);
+    const target = touchDragTarget(anchor, 30, 20);
+
+    expect(target.x).toBeCloseTo(84 - 20 * 1.15);
+    expect(target.y).toBeCloseTo(100 - 20 * 1.15);
+  });
+
+  it("拖出场地时夹在飞船活动范围内", () => {
+    const anchor = touchDragAnchor(84, 100, 84, 100);
+
+    const upLeft = touchDragTarget(anchor, -500, -500);
+    expect(upLeft).toEqual({ x: clampShipX(-500), y: clampShipY(-500) });
+
+    const downRight = touchDragTarget(anchor, 500, 500);
+    expect(downRight).toEqual({ x: clampShipX(500), y: clampShipY(500) });
+  });
+
+  it("手指离飞船很远按下时不会瞬移，零位移保持原位", () => {
+    const anchor = touchDragAnchor(20, 20, 84, 100);
+
+    expect(touchDragTarget(anchor, 20, 20)).toEqual({ x: 84, y: 100 });
+    // 灵敏度可以显式覆盖，位移按传入值缩放。
+    expect(touchDragTarget(anchor, 30, 20, 1.5)).toEqual({ x: 84 + 10 * 1.5, y: 100 });
   });
 });

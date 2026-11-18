@@ -1,0 +1,242 @@
+/* ============================================================
+   INSTALL GUIDE · iPhone 添加到主屏幕引导
+   一张深色像素说明书 / 贴纸，不动后面的游戏布局。
+   ============================================================ */
+
+.install-guide {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px));
+}
+
+.install-guide[hidden] {
+  display: none;
+}
+
+.install-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.2) 0 10px,
+      transparent 10px 20px
+    ),
+    radial-gradient(ellipse at 50% 44%, transparent 38%, rgba(0, 0, 0, 0.38) 100%),
+    rgba(7, 6, 12, 0.86);
+}
+
+.install-card {
+  position: relative;
+  width: min(100%, 388px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 20px 18px 17px;
+  border: 1px solid var(--c-cream);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.04), transparent 28%),
+    linear-gradient(180deg, var(--c-panel) 0%, var(--c-night) 100%);
+  box-shadow:
+    0 0 0 2px var(--c-void),
+    0 0 0 3px rgba(74, 60, 104, 0.5),
+    8px 8px 0 rgba(0, 0, 0, 0.42);
+  scrollbar-color: var(--c-line-hi) var(--c-night);
+  scrollbar-width: thin;
+  animation: guide-in 0.2s steps(3, end) both;
+}
+
+/* 说明书顶部的警示条纹 */
+.install-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 6px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--c-amber) 0 9px,
+    var(--c-void) 9px 13px
+  );
+  content: "";
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/* 右上角的打孔 */
+.install-card::after {
+  position: absolute;
+  top: 14px;
+  right: 13px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-void);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.9),
+    0 1px 0 rgba(255, 248, 232, 0.1);
+  content: "";
+  pointer-events: none;
+}
+
+.install-kicker {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 2px 6px;
+  background: var(--c-amber);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  color: var(--c-void);
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1.5;
+  transform: rotate(-1deg);
+  transform-origin: left center;
+}
+
+.install-card h2 {
+  margin-top: 9px;
+  padding-bottom: 9px;
+  background: linear-gradient(90deg, rgba(240, 229, 202, 0.3), transparent 88%) 0 100% / 100% 1px no-repeat;
+  color: var(--c-cream);
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+}
+
+.install-lead {
+  margin-top: 10px;
+  color: var(--c-lav);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.install-steps {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  margin: 15px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 步骤左侧的虚线导轨 */
+.install-steps::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 9px;
+  border-left: 1px dashed var(--c-line-hi);
+  content: "";
+}
+
+.install-steps li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--c-cream);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.install-num {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--c-amber);
+  background: var(--c-panel);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 248, 232, 0.06);
+  color: var(--c-gold);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.install-note {
+  margin-top: 14px;
+  padding: 8px 10px 8px 12px;
+  border-left: 2px solid var(--c-amber);
+  background: rgba(243, 168, 65, 0.055);
+  color: var(--c-lav);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.install-actions .btn {
+  flex: 1 1 auto;
+  min-height: 48px;
+  font-size: 14px;
+}
+
+.install-actions .btn-link {
+  flex: none;
+  min-height: 44px;
+  color: rgba(162, 145, 196, 0.8);
+  font-size: 10px;
+  text-decoration: underline;
+  text-decoration-color: var(--c-line-hi);
+  text-underline-offset: 3px;
+}
+
+.install-actions .btn-link:hover {
+  color: var(--c-gold);
+}
+
+@keyframes guide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .install-card {
+    padding: 18px 14px 14px;
+  }
+
+  .install-card h2 {
+    font-size: 19px;
+  }
+
+  .install-lead {
+    font-size: 11px;
+  }
+
+  .install-steps li {
+    font-size: 11px;
+  }
+}
+
+/* 引导打开时别再让页面跟着滚 */
+body.is-guide-open {
+  overflow: hidden;
+}

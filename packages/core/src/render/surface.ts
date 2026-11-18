@@ -10,6 +10,13 @@ export interface SurfaceFit {
   dpr: number;
 }
 
+export interface SurfaceOptions {
+  /** 主画布可以关掉 alpha，减少合成开销；特效层需要透明。 */
+  alpha?: boolean;
+  /** Chromium 下降低输入/绘制延迟；其他浏览器忽略。 */
+  desynchronized?: boolean;
+}
+
 export class PixelSurface {
   readonly canvas: HTMLCanvasElement;
   readonly ctx: CanvasRenderingContext2D;
@@ -27,12 +34,15 @@ export class PixelSurface {
   private queued = false;
   private disposed = false;
 
-  constructor(canvas: HTMLCanvasElement, w: number, h: number, container: HTMLElement) {
+  constructor(canvas: HTMLCanvasElement, w: number, h: number, container: HTMLElement, options: SurfaceOptions = {}) {
     this.canvas = canvas;
     this.w = w;
     this.h = h;
     this.container = container;
-    const ctx = canvas.getContext("2d", { alpha: true });
+    const ctx = canvas.getContext("2d", {
+      alpha: options.alpha ?? true,
+      desynchronized: options.desynchronized ?? false,
+    });
     if (!ctx) throw new Error("canvas 2d context 不可用");
     this.ctx = ctx;
 

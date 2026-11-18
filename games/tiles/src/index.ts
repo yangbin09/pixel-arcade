@@ -16,6 +16,7 @@ import {
 import { drawBlock, laneBase, laneLight, paintTrack } from "./art";
 import { meta } from "./meta";
 import {
+  AUTO_LANE,
   BLOCK_H,
   BLOCK_W,
   H,
@@ -29,8 +30,8 @@ import {
   isHittable,
   isMissed,
   lowestHittable,
-  lowestHittableAny,
   multiplierFor,
+  pickLaneTarget,
   pointsFor,
   speedForLevel,
   speedLevelFor,
@@ -91,6 +92,8 @@ const game = defineGame({
     let spawnTimer = 0;
     let nextId = 1;
     let lastLane = -1;
+    /** 手柄选中的轨道：-1 = 自动，0..3 = 指定轨道。 */
+    let selectedLane = AUTO_LANE;
     let blocks: Block[] = [];
     let bits: Bit[] = [];
     let popups: Popup[] = [];
@@ -124,6 +127,7 @@ const game = defineGame({
       spawnTimer = 0;
       nextId = 1;
       lastLane = -1;
+      selectedLane = AUTO_LANE;
       blocks = [];
       bits = [];
       popups = [];
@@ -263,6 +267,8 @@ const game = defineGame({
       if (info.source.pointerType === "mouse" && info.source.button !== 0) return;
       ctx.audio.unlock();
       const lane = clamp(Math.floor(info.x / LANE_W), 0, LANES - 1);
+      // 点过哪条轨道，手柄的选中轨道就跟随到哪，下一次 A 键不会砸错列。
+      selectedLane = lane;
       tapLane(lane);
     });
 
@@ -273,10 +279,17 @@ const game = defineGame({
         if (lane >= 0 && lane < LANES) tapLane(lane);
         return;
       }
-      // 空格：直接砸最下方的可点方块，方便单手。
+      if (action === "left" || action === "right") {
+        const step = action === "left" ? -1 : 1;
+        // 还没选轨时，左键直接落到最左、右键直接落到最右。
+        const next = selectedLane < 0 ? (step < 0 ? 0 : LANES - 1) : selectedLane + step;
+        selectedLane = clamp(next, 0, LANES - 1);
+        return;
+      }
+      // 空格 / A：优先砸选中轨道；选中轨道空着时退回全场最下方，不判 miss。
       if (action === "action") {
-        const block = lowestHittableAny(blocks);
-        if (block) tapLane(block.lane);
+        const block = pickLaneTarget(blocks, selectedLane);
+        if (block) hitBlock(block);
       }
     });
 
@@ -332,9 +345,24 @@ const game = defineGame({
       c.globalAlpha = 1;
     };
 
+    /** 虚拟手柄选轨：轨道底部 2px 金条 + 两侧短角标；未选轨（-1）不画。 */
+    const drawLaneCursor = (): void => {
+      if (selectedLane < 0 || !ctx.padVisible()) return;
+
+      const c = ctx.ctx;
+      const x = selectedLane * LANE_W;
+      rect(c, x + 3, H - 4, LANE_W - 6, 2, P.gold);
+      rect(c, x + 3, H - 10, 2, 6, P.gold);
+      rect(c, x + LANE_W - 5, H - 10, 2, 6, P.gold);
+      rect(c, x + Math.round(LANE_W / 2) - 1, H - 4, 2, 2, P.cream);
+    };
+
     const render = (): void => {
       const c = ctx.ctx;
       paintTrack(c);
+
+      // 选轨标记画在方块之前：方块落到底部时盖住标记，不会被标记挡住。
+      drawLaneCursor();
 
       for (const block of blocks) {
         drawBlock(c, blockX(block.lane), Math.round(block.y), block.lane, isHittable(block));

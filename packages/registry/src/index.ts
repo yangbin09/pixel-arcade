@@ -34,6 +34,16 @@ export interface MetaLike {
   hud: { key: string; label: string }[];
   scoreMode?: "high" | "low";
   bestLabel?: string;
+  pad?: {
+    dpad?: string;
+    up?: string;
+    down?: string;
+    left?: string;
+    right?: string;
+    a?: { action?: string; label?: string };
+    b?: { action?: string; label?: string };
+    start?: boolean;
+  };
   drawThumb?: unknown;
 }
 
@@ -52,6 +62,26 @@ export function validateMeta(meta: MetaLike): string[] {
   if (typeof meta.drawThumb !== "function") problems.push(`${meta.id} 缺少 drawThumb()`);
   if ((meta.scoreMode ?? "high") !== "high" && (meta.scoreMode ?? "high") !== "low") {
     problems.push(`${meta.id} 的 scoreMode 只能是 high / low`);
+  }
+  if (meta.pad) {
+    const { pad } = meta;
+    if (pad.dpad !== undefined && !["none", "lr", "four"].includes(pad.dpad)) {
+      problems.push(`${meta.id} 的 pad.dpad 只能是 none / lr / four`);
+    }
+    for (const key of ["up", "down", "left", "right"] as const) {
+      if (pad[key] !== undefined && !pad[key]) problems.push(`${meta.id} 的 pad.${key} 不能为空`);
+    }
+    for (const key of ["a", "b"] as const) {
+      const button = pad[key];
+      if (!button) continue;
+      if (!button.action) problems.push(`${meta.id} 的 pad.${key}.action 不能为空`);
+      if (!button.label || button.label.length > 6) {
+        problems.push(`${meta.id} 的 pad.${key}.label 需要 1–6 个字`);
+      }
+    }
+    if (pad.start !== undefined && typeof pad.start !== "boolean") {
+      problems.push(`${meta.id} 的 pad.start 必须是 boolean`);
+    }
   }
   return problems;
 }

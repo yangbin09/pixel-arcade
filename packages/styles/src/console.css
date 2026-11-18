@@ -1,0 +1,1191 @@
+/* ============================================================
+   CONSOLE · 复古掌机外壳
+   屏幕、HUD、虚拟手柄都装进一台「PIXEL ARCADE PA-10」。
+   颜色只来自 tokens.css，透明层用 rgba(0,0,0) / rgba(255,248,232)。
+   结构不动：装饰全部由渐变、边框、阴影和伪元素完成。
+   ============================================================ */
+
+.play-wrap {
+  /* 屏幕最高能吃到多少：给顶栏、HUD、手柄和机台内衬留出空间 */
+  --console-frame-max: calc(100dvh - 344px);
+  max-width: 560px;
+  padding-right: 6px;
+  padding-left: 6px;
+}
+
+/* ============================================================
+   机台塑料壳
+   ============================================================ */
+
+.cabinet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px 7px 9px;
+  border: 1px solid var(--c-line-hi);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(
+        90deg,
+        transparent 0 4px,
+        rgba(0, 0, 0, 0.62) 4px 6px
+      )
+      no-repeat 50% calc(100% - 188px) / 112px 10px,
+    linear-gradient(180deg, rgba(255, 248, 232, 0.05) 0%, transparent 7%),
+    linear-gradient(180deg, var(--c-panel-2) 0%, var(--c-panel) 22%, var(--c-night) 68%, var(--c-void) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.16),
+    inset 1px 0 0 rgba(255, 248, 232, 0.045),
+    inset -1px 0 0 rgba(0, 0, 0, 0.4),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.44),
+    0 0 0 2px var(--c-void),
+    0 0 0 3px rgba(74, 60, 104, 0.36),
+    0 5px 0 2px rgba(0, 0, 0, 0.3),
+    0 16px 30px rgba(0, 0, 0, 0.45);
+  isolation: isolate;
+}
+
+/* 一圈浅浅的模具分模线 */
+.cabinet::before {
+  position: absolute;
+  inset: 3px;
+  z-index: 0;
+  border: 1px solid rgba(255, 248, 232, 0.045);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.28);
+  content: "";
+  pointer-events: none;
+}
+
+/* 四角螺丝：每颗一个微小的十字/圆点 */
+.cabinet::after {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background-image:
+    radial-gradient(
+      circle at 50% 50%,
+      var(--c-void) 0 0.7px,
+      var(--c-line-hi) 0.8px 1.8px,
+      rgba(255, 248, 232, 0.2) 1.9px 2.2px,
+      transparent 2.4px
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      var(--c-void) 0 0.7px,
+      var(--c-line-hi) 0.8px 1.8px,
+      rgba(255, 248, 232, 0.2) 1.9px 2.2px,
+      transparent 2.4px
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      var(--c-void) 0 0.7px,
+      var(--c-line-hi) 0.8px 1.8px,
+      rgba(255, 248, 232, 0.2) 1.9px 2.2px,
+      transparent 2.4px
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      var(--c-void) 0 0.7px,
+      var(--c-line-hi) 0.8px 1.8px,
+      rgba(255, 248, 232, 0.2) 1.9px 2.2px,
+      transparent 2.4px
+    );
+  background-position:
+    7px 7px,
+    calc(100% - 7px) 7px,
+    7px calc(100% - 7px),
+    calc(100% - 7px) calc(100% - 7px);
+  background-repeat: no-repeat;
+  background-size: 7px 7px;
+  content: "";
+  pointer-events: none;
+}
+
+/* ---------- 顶部铭牌 ---------- */
+
+.cabinet-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 2px 5px;
+  border-bottom: 1px solid rgba(74, 60, 104, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.055), transparent 65%),
+    linear-gradient(180deg, rgba(29, 24, 48, 0.62), rgba(13, 11, 22, 0.2));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.08),
+    0 1px 0 rgba(0, 0, 0, 0.42);
+  color: var(--c-muted);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.cabinet-brand {
+  color: var(--c-cream);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+}
+
+.cabinet-model {
+  padding: 1px 3px;
+  border: 1px solid var(--c-line-hi);
+  background: rgba(0, 0, 0, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 248, 232, 0.06);
+  color: var(--c-purple);
+  font-size: 6.5px;
+  letter-spacing: 0.1em;
+}
+
+.cabinet-led {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 1px;
+  background:
+    radial-gradient(circle at 42% 36%, var(--c-white) 0 20%, var(--c-mint) 42%, var(--c-grass-hi) 100%);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.72),
+    0 0 6px rgba(166, 217, 107, 0.7),
+    inset 0 0 2px rgba(255, 248, 232, 0.45);
+  animation: power-breathe 3.8s steps(3, end) infinite;
+}
+
+.cabinet-spacer {
+  flex: 1 1 auto;
+}
+
+/* 小拨杆：一个实体小键帽 + 一颗状态灯 */
+.cabinet-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 20px;
+  padding: 0 5px 0 12px;
+  border: 1px solid var(--c-line-hi);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.07), transparent 55%),
+    linear-gradient(180deg, var(--c-panel-2), var(--c-night));
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 248, 232, 0.1);
+  color: var(--c-purple);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.08s steps(2, end),
+    border-color 0.1s linear,
+    color 0.1s linear;
+}
+
+/* 放大的触摸区：34×20 的键帽，热区 36×44 */
+.cabinet-top .cabinet-switch::before {
+  position: absolute;
+  inset: -13px -2px;
+  content: "";
+}
+
+.cabinet-switch::after {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--c-line-hi);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+  content: "";
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.cabinet-switch[aria-checked="true"] {
+  border-color: var(--c-line-hi);
+  color: var(--c-cream);
+}
+
+.cabinet-switch[aria-checked="true"]::after {
+  background: var(--c-gold);
+  box-shadow:
+    0 0 5px rgba(255, 211, 95, 0.55),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.cabinet-switch[aria-checked="false"] {
+  background: var(--c-night);
+  box-shadow:
+    inset 0 2px 3px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(0, 0, 0, 0.4);
+  color: var(--c-purple);
+}
+
+.cabinet-switch:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 3px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.cabinet-switch:disabled {
+  opacity: 0.38;
+}
+
+.cabinet-switch:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 3px;
+}
+
+@keyframes power-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.68;
+  }
+}
+
+/* ============================================================
+   仪表窗 / 计时条
+   ============================================================ */
+
+.cabinet .hud {
+  position: relative;
+  margin-top: 7px;
+  border: 1px solid var(--c-line-hi);
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.028), transparent 45%),
+    rgba(7, 6, 12, 0.58);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 248, 232, 0.05),
+    0 1px 0 rgba(255, 248, 232, 0.04);
+}
+
+.cabinet .stat {
+  padding: 6px 9px 7px;
+}
+
+.cabinet .stat + .stat {
+  border-left: 1px solid rgba(74, 60, 104, 0.72);
+}
+
+.cabinet .stat-label {
+  color: var(--c-lav);
+  opacity: 0.86;
+}
+
+.cabinet .timer {
+  margin-top: 5px;
+  border: 1px solid var(--c-line-hi);
+  border-radius: 2px;
+  background: var(--c-void);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.72),
+    0 1px 0 rgba(255, 248, 232, 0.04);
+}
+
+/* ============================================================
+   屏幕：内凹边框 + 玻璃 + 暗角 / 扫描线
+   ============================================================ */
+
+.screen-frame {
+  position: relative;
+  width: min(100%, calc(var(--console-frame-max) * var(--screen-w, 1) / var(--screen-h, 1)));
+  max-height: var(--console-frame-max);
+  aspect-ratio: var(--screen-ratio, 1 / 1);
+  margin: 8px auto 0;
+  padding: clamp(5px, 1.6vw, 9px);
+  box-sizing: border-box;
+  border: 1px solid var(--c-line-hi);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.1) 0%, transparent 12%),
+    linear-gradient(180deg, var(--c-panel-2) 0%, var(--c-panel) 38%, var(--c-night) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.14),
+    inset 1px 0 0 rgba(255, 248, 232, 0.04),
+    inset -1px 0 0 rgba(0, 0, 0, 0.38),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.52),
+    0 0 0 1px var(--c-void),
+    0 2px 0 1px rgba(0, 0, 0, 0.32),
+    0 6px 12px rgba(0, 0, 0, 0.38);
+}
+
+/* 边框内侧的一圈压边 */
+.screen-frame::before {
+  position: absolute;
+  inset: 3px;
+  z-index: 1;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(255, 248, 232, 0.045);
+  content: "";
+  pointer-events: none;
+}
+
+/* 边框丝印 */
+.screen-frame::after {
+  position: absolute;
+  right: 9px;
+  bottom: 1px;
+  z-index: 2;
+  color: rgba(162, 145, 196, 0.55);
+  content: "LCD";
+  font-family: var(--font-mono);
+  font-size: 5.5px;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.cabinet .screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  aspect-ratio: auto;
+  border-radius: 2px;
+  background-color: var(--c-void);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(74, 60, 104, 0.05) 0,
+      rgba(74, 60, 104, 0.05) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    radial-gradient(ellipse at 50% 42%, rgba(29, 24, 48, 0.9) 0%, rgba(13, 11, 22, 0.98) 58%, var(--c-void) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.85),
+    inset 0 3px 9px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.42),
+    0 0 12px rgba(243, 168, 65, 0.055);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ---------- CRT / 玻璃 ---------- */
+
+.screen-crt,
+.screen-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.screen-crt {
+  display: block;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.26) 0,
+      rgba(0, 0, 0, 0.26) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(ellipse at center, transparent 54%, rgba(0, 0, 0, 0.4) 100%);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  transition: opacity 0.18s linear;
+}
+
+.is-crt .screen-crt {
+  opacity: 1;
+}
+
+/* 玻璃斜向反光：左上角一条高光带 + 边缘弧面 */
+.screen-glass {
+  background:
+    linear-gradient(
+      116deg,
+      transparent 0 8%,
+      rgba(255, 248, 232, 0.05) 8% 12%,
+      rgba(255, 248, 232, 0.016) 12% 17%,
+      transparent 17% 46%,
+      rgba(255, 248, 232, 0.012) 46% 49%,
+      transparent 49% 72%,
+      rgba(255, 248, 232, 0.028) 72% 74.5%,
+      transparent 74.5% 100%
+    ),
+    radial-gradient(ellipse 120% 88% at 50% 34%, transparent 48%, rgba(0, 0, 0, 0.14) 74%, rgba(0, 0, 0, 0.4) 100%),
+    radial-gradient(ellipse 78% 48% at 50% -8%, rgba(255, 248, 232, 0.04), transparent 62%),
+    radial-gradient(ellipse 90% 40% at 50% 108%, rgba(255, 248, 232, 0.022), transparent 60%);
+  opacity: 0.94;
+}
+
+/* ============================================================
+   虚拟手柄
+   ============================================================ */
+
+.cabinet .pad {
+  --dpad-key: clamp(36px, 9.4vw, 40px);
+  --face-key: clamp(46px, 13.6vw, 58px);
+  --start-w: clamp(76px, 20vw, 92px);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: clamp(6px, 2vw, 14px);
+  row-gap: clamp(10px, 1.8vh, 18px);
+  min-height: 0;
+  margin-top: auto;
+  padding: 6px 2px 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.pad[hidden] {
+  display: none;
+}
+
+/* 拉手：一排扬声器孔中间的一枚小卡扣（新结构才有） */
+.cabinet .pad-handle {
+  position: relative;
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid rgba(74, 60, 104, 0.42);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.035), transparent 70%);
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.4);
+  color: var(--c-lav);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.12s linear;
+}
+
+.cabinet .pad-handle::before {
+  position: absolute;
+  inset: -12px 0;
+  content: "";
+}
+
+.cabinet .pad-handle:hover,
+.cabinet .pad-handle:focus-visible {
+  color: var(--c-white);
+}
+
+.cabinet .pad-handle:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 2px;
+}
+
+.cabinet .pad-handle i {
+  display: block;
+  width: 0;
+  height: 0;
+  border-right: 3.5px solid transparent;
+  border-bottom: 4.5px solid currentColor;
+  border-left: 3.5px solid transparent;
+  transform: rotate(180deg);
+  transition: transform 0.16s steps(2, end);
+}
+
+/* 新结构把方向键/START/A、B 包在 .pad-controls 里；
+   display:contents 让它们直接参与 .pad 的三列网格，旧结构也能用。 */
+.cabinet .pad-controls {
+  display: contents;
+}
+
+.cabinet .pad-controls[hidden] {
+  display: none;
+}
+
+/* 收起手柄后把高度还给屏幕（不支持 :has 时保持原样，不报错） */
+.cabinet:has(.pad.is-collapsed) .screen-frame {
+  --console-frame-max: calc(100dvh - 220px);
+}
+
+.pad button {
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- 十字键 ---------- */
+
+.pad-dpad {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, var(--dpad-key));
+  grid-template-rows: repeat(3, var(--dpad-key));
+  justify-self: start;
+  width: max-content;
+}
+
+.pad-dir {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  margin: -1px;
+  padding: 0;
+  border: 1px solid var(--c-line-hi);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.075) 0%, transparent 42%),
+    linear-gradient(180deg, var(--c-panel-2) 0%, var(--c-panel) 55%, var(--c-night) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.12),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.32);
+  color: var(--c-cream);
+  cursor: pointer;
+  transition:
+    transform 0.06s steps(2, end),
+    background-color 0.08s linear,
+    border-color 0.1s linear;
+}
+
+.pad-dir--up {
+  grid-area: 1 / 2;
+  border-radius: 4px 4px 1px 1px;
+}
+.pad-dir--left {
+  grid-area: 2 / 1;
+  border-radius: 4px 1px 1px 4px;
+}
+.pad-dir--right {
+  grid-area: 2 / 3;
+  border-radius: 1px 4px 4px 1px;
+}
+.pad-dir--down {
+  grid-area: 3 / 2;
+  border-radius: 1px 1px 4px 4px;
+}
+
+/* 箭头：带一点像素台阶的粗箭头 */
+.pad-dir i {
+  display: block;
+  width: 10px;
+  height: 9px;
+  background: var(--c-cream);
+  clip-path: polygon(50% 0, 100% 55%, 62% 55%, 62% 100%, 38% 100%, 38% 55%, 0 55%);
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.55));
+  transform: translateY(-1px);
+}
+
+.pad-dir--down i {
+  transform: rotate(180deg) translateY(-1px);
+}
+.pad-dir--left i {
+  transform: rotate(-90deg) translateY(-1px);
+}
+.pad-dir--right i {
+  transform: rotate(90deg) translateY(-1px);
+}
+
+.pad-dir.is-down {
+  z-index: 2;
+  border-color: var(--c-amber);
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.16) 100%),
+    linear-gradient(180deg, var(--c-panel) 0%, var(--c-night) 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.55),
+    inset 0 -1px 0 rgba(255, 248, 232, 0.04);
+}
+
+.pad-dir--up.is-down {
+  transform: translateY(1px);
+}
+.pad-dir--down.is-down {
+  transform: translateY(-1px);
+}
+.pad-dir--left.is-down {
+  transform: translateX(1px);
+}
+.pad-dir--right.is-down {
+  transform: translateX(-1px);
+}
+
+.pad-dir.is-down i {
+  background: var(--c-gold);
+}
+
+.pad-dpad-hub {
+  position: relative;
+  z-index: 1;
+  grid-area: 2 / 2;
+  margin: -1px;
+  border: 1px solid var(--c-line-hi);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.04), transparent 60%),
+    var(--c-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.08),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.pad-dpad-hub::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--c-night);
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.8),
+    0 1px 0 rgba(255, 248, 232, 0.07);
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+/* 左右两键的简化手柄（breakout 之类） */
+.pad-dpad[data-shape="lr"] {
+  grid-template-columns: repeat(2, var(--dpad-key));
+  grid-template-rows: var(--dpad-key);
+  gap: 6px;
+}
+
+.pad-dpad[data-shape="lr"] .pad-dir {
+  margin: 0;
+  border-radius: 4px;
+}
+
+.pad-dpad[data-shape="lr"] .pad-dir--left {
+  grid-area: 1 / 1;
+}
+.pad-dpad[data-shape="lr"] .pad-dir--right {
+  grid-area: 1 / 2;
+}
+
+.pad-dpad[data-shape="lr"] .pad-dir i {
+  transform: rotate(-90deg);
+}
+.pad-dpad[data-shape="lr"] .pad-dir--right i {
+  transform: rotate(90deg);
+}
+
+/* ---------- A / B ---------- */
+
+.pad-face {
+  position: relative;
+  justify-self: end;
+  width: calc(var(--face-key) * 2 - 2px);
+  height: calc(var(--face-key) * 2 - 2px);
+}
+
+.pad-round {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: var(--face-key);
+  height: var(--face-key);
+  padding: 0;
+  border: 1px solid var(--c-line-hi);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255, 248, 232, 0.17) 0%, rgba(255, 248, 232, 0.04) 32%, transparent 48%),
+    radial-gradient(circle at 50% 72%, var(--c-panel-2) 0%, var(--c-panel) 44%, var(--c-night) 100%);
+  box-shadow:
+    0 4px 0 var(--c-void),
+    0 6px 8px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 248, 232, 0.2),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.35);
+  color: var(--c-cream);
+  cursor: pointer;
+  transition:
+    transform 0.06s steps(2, end),
+    box-shadow 0.08s linear,
+    border-color 0.1s linear;
+}
+
+.pad-round--b {
+  left: 0;
+  bottom: 0;
+}
+
+.pad-round--a {
+  top: 0;
+  right: 0;
+}
+
+.pad-round b {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: clamp(12px, 3.4vw, 15px);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+.pad-round span {
+  display: block;
+  max-width: calc(var(--face-key) - 8px);
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--c-muted);
+  font-family: var(--font-cn);
+  font-size: clamp(6px, 1.8vw, 8px);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pad-round.is-down {
+  z-index: 2;
+  border-color: var(--c-amber);
+  background:
+    radial-gradient(circle at 50% 65%, var(--c-panel) 0%, var(--c-night) 100%);
+  box-shadow:
+    0 1px 0 var(--c-void),
+    inset 0 3px 6px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(243, 168, 65, 0.16);
+  transform: translateY(3px);
+}
+
+.pad-round.is-down b {
+  color: var(--c-gold);
+}
+
+/* ---------- START 胶囊键 ---------- */
+
+.pad-start-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pad-start {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: var(--start-w);
+  height: 44px;
+  place-items: center;
+  isolation: isolate;
+  background: none;
+  color: var(--c-cream);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* 视觉上只有 28px 高的小胶囊，盒模型保证 44px 触摸高度 */
+.pad-start::before {
+  position: absolute;
+  inset: 8px 0;
+  z-index: -1;
+  border: 1px solid var(--c-line-hi);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.08) 0%, transparent 54%),
+    linear-gradient(180deg, var(--c-panel-2), var(--c-night));
+  box-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 248, 232, 0.12);
+  content: "";
+  transition:
+    transform 0.06s steps(2, end),
+    box-shadow 0.08s linear,
+    border-color 0.1s linear;
+}
+
+.pad-start.is-down {
+  color: var(--c-gold);
+}
+
+.pad-start.is-down::before {
+  border-color: var(--c-amber);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.5),
+    inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  transform: translateY(2px);
+}
+
+/* ---------- 桌面 hover ---------- */
+
+@media (hover: hover) {
+  .pad-dir:hover {
+    border-color: var(--c-purple);
+  }
+  .pad-round:hover {
+    border-color: var(--c-purple);
+  }
+  .pad-start:hover::before {
+    border-color: var(--c-purple);
+  }
+}
+
+/* ---------- 按键焦点 ---------- */
+
+.pad-dir:focus-visible,
+.pad-round:focus-visible,
+.pad-start:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   竖屏：机台吃满一屏，手柄贴底
+   ============================================================ */
+
+@media (max-width: 700px) and (min-height: 560px) {
+  .cabinet {
+    min-height: calc(100dvh - 44px - 12px - 10px - max(18px, env(safe-area-inset-bottom, 18px)));
+  }
+}
+
+/* ============================================================
+   全屏 / 沉浸：机台填满视口，屏幕尽量大，手柄贴底
+   原生全屏的目标是 .play-wrap 本身（FullscreenController 传的是 #shell）
+   ============================================================ */
+
+.play-wrap:fullscreen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  height: 100dvh;
+  margin: 0 auto;
+  padding-top: max(6px, env(safe-area-inset-top, 0px));
+  padding-right: 6px;
+  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+  padding-left: 6px;
+  background: radial-gradient(ellipse at 50% 28%, rgba(21, 17, 37, 0.6), var(--c-void) 72%);
+  overflow: hidden;
+}
+
+.play-wrap:fullscreen .play-notes {
+  display: none;
+}
+
+.play-wrap:fullscreen .cabinet,
+.page-play:fullscreen .cabinet,
+body.page-play.is-immersive .cabinet {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 6px;
+}
+
+.play-wrap:fullscreen .screen-frame,
+.page-play:fullscreen .screen-frame,
+body.page-play.is-immersive .screen-frame {
+  --console-frame-max: calc(100dvh - 240px);
+  /* 不能简单 flex:1；比例来自 #shell 上的 --screen-ratio / --screen-w / --screen-h */
+  width: min(100%, calc(var(--console-frame-max) * var(--screen-w, 1) / var(--screen-h, 1)));
+  max-height: var(--console-frame-max);
+  aspect-ratio: var(--screen-ratio, 1 / 1);
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+/* 顶栏还在的那 2.6 秒，先给顶栏留位置，避免手柄被挤出屏幕 */
+.play-wrap:fullscreen:not(.is-chrome-hidden) .screen-frame,
+.page-play:fullscreen .play-wrap:not(.is-chrome-hidden) .screen-frame,
+body.page-play.is-immersive .play-wrap:not(.is-chrome-hidden) .screen-frame {
+  --console-frame-max: calc(100dvh - 340px);
+}
+
+/* 全屏 / 沉浸时收起手柄，屏幕继续向上长 */
+.play-wrap:fullscreen .cabinet:has(.pad.is-collapsed) .screen-frame,
+.page-play:fullscreen .cabinet:has(.pad.is-collapsed) .screen-frame,
+body.page-play.is-immersive .cabinet:has(.pad.is-collapsed) .screen-frame {
+  --console-frame-max: calc(100dvh - 160px);
+}
+
+.play-wrap:fullscreen:not(.is-chrome-hidden) .cabinet:has(.pad.is-collapsed) .screen-frame,
+.page-play:fullscreen .play-wrap:not(.is-chrome-hidden) .cabinet:has(.pad.is-collapsed) .screen-frame,
+body.page-play.is-immersive .play-wrap:not(.is-chrome-hidden) .cabinet:has(.pad.is-collapsed) .screen-frame {
+  --console-frame-max: calc(100dvh - 212px);
+}
+
+/* iPhone Safari（非 PWA）的底栏是浏览器 UI，safe-area 不包含它。
+   沉浸时额外留 50px，PWA / standalone 没有 is-ios-browser，不受影响。 */
+body.page-play.is-ios-browser.is-immersive .play-wrap {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 50px);
+}
+
+body.page-play.is-ios-browser.is-immersive .screen-frame {
+  --console-frame-max: calc(100dvh - 338px - env(safe-area-inset-bottom, 0px));
+}
+
+body.page-play.is-ios-browser.is-immersive .play-wrap:not(.is-chrome-hidden) .screen-frame {
+  --console-frame-max: calc(100dvh - 390px - env(safe-area-inset-bottom, 0px));
+}
+
+body.page-play.is-ios-browser.is-immersive .cabinet:has(.pad.is-collapsed) .screen-frame {
+  --console-frame-max: calc(100dvh - 210px - env(safe-area-inset-bottom, 0px));
+}
+
+body.page-play.is-ios-browser.is-immersive .play-wrap:not(.is-chrome-hidden) .cabinet:has(.pad.is-collapsed) .screen-frame {
+  --console-frame-max: calc(100dvh - 262px - env(safe-area-inset-bottom, 0px));
+}
+
+.play-wrap:fullscreen .pad,
+.page-play:fullscreen .pad,
+body.page-play.is-immersive .pad {
+  margin-top: auto;
+}
+
+.play-wrap:fullscreen .cabinet .screen,
+.page-play:fullscreen .cabinet .screen,
+body.page-play.is-immersive .cabinet .screen {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin-top: 0;
+}
+
+.play-wrap:fullscreen #field,
+.page-play:fullscreen #field,
+body.page-play.is-immersive #field {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* 全屏时桌面别把掌机拉成平板 */
+.page-play:fullscreen .play-wrap,
+body.page-play.is-immersive .play-wrap {
+  max-width: 560px;
+}
+
+/* ============================================================
+   小屏 / 大屏微调
+   ============================================================ */
+
+@media (max-height: 740px) {
+  .cabinet .pad {
+    --dpad-key: clamp(36px, 9.6vw, 37px);
+    --face-key: clamp(45px, 13.2vw, 50px);
+    --start-w: clamp(72px, 19vw, 82px);
+  }
+
+  .cabinet .pad-handle {
+    height: 20px;
+  }
+
+  .cabinet .pad {
+    row-gap: 9px;
+    padding-top: 4px;
+  }
+
+  .cabinet .stat {
+    padding: 5px 8px 6px;
+  }
+
+  .screen-frame {
+    margin-top: 6px;
+  }
+
+  .play-wrap:fullscreen .screen-frame,
+  .page-play:fullscreen .screen-frame,
+  body.page-play.is-immersive .screen-frame {
+    --console-frame-max: calc(100dvh - 276px);
+  }
+
+  .play-wrap:fullscreen:not(.is-chrome-hidden) .screen-frame,
+  .page-play:fullscreen .play-wrap:not(.is-chrome-hidden) .screen-frame,
+  body.page-play.is-immersive .play-wrap:not(.is-chrome-hidden) .screen-frame {
+    --console-frame-max: calc(100dvh - 328px);
+  }
+
+  body.page-play.is-ios-browser.is-immersive .screen-frame {
+    --console-frame-max: calc(100dvh - 326px - env(safe-area-inset-bottom, 0px));
+  }
+
+  body.page-play.is-ios-browser.is-immersive .play-wrap:not(.is-chrome-hidden) .screen-frame {
+    --console-frame-max: calc(100dvh - 378px - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (min-height: 741px) and (max-height: 900px) and (max-width: 700px) {
+  /* 只有 blocks 这种 1:2 竖长机位需要把上下装饰收一点，
+     让整数缩放从 unit 2 回到 unit 3（300×588）；1:1/1:1.25 的机位保持原尺寸。 */
+  .cabinet[data-ratio="tall"] .pad {
+    --dpad-key: 31px;
+    --face-key: 47px;
+    --start-w: 72px;
+  }
+
+  .cabinet[data-ratio="tall"] .cabinet-top {
+    min-height: 20px;
+    padding-bottom: 4px;
+  }
+
+  .cabinet[data-ratio="tall"] .stat {
+    padding: 4px 8px 5px;
+  }
+
+  .cabinet[data-ratio="tall"] .screen-frame {
+    margin-top: 2px;
+    padding: 3px;
+  }
+}
+
+@media (max-width: 383px) {
+  /* 小屏上把屏幕收窄一点，避免整数缩放后左右露出太宽的黑边 */
+  .screen-frame {
+    max-width: 304px;
+  }
+
+  .screen-frame::after {
+    display: none;
+  }
+}
+
+/* 640 高的小屏：准备弹窗先露出开始按钮，说明文字放在下面滚动 */
+@media (max-height: 720px) and (max-width: 383px) {
+  .cabinet .screen .overlay {
+    padding: 6px;
+  }
+
+  .cabinet .screen .dialog[data-panel="ready"] {
+    display: flex;
+    flex-direction: column;
+    padding: 11px 9px;
+  }
+
+  .cabinet .screen .dialog[data-panel="ready"] .dialog-kicker {
+    order: 0;
+    font-size: 7px;
+    letter-spacing: 0.16em;
+  }
+
+  .cabinet .screen .dialog[data-panel="ready"] h2 {
+    order: 1;
+    margin-top: 4px;
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .cabinet .screen .dialog[data-panel="ready"] .dialog-actions {
+    order: 2;
+    gap: 5px;
+    margin-top: 9px;
+  }
+
+  .cabinet .screen .dialog[data-panel="ready"] .dialog-actions .btn {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .cabinet .screen .dialog[data-panel="ready"] .dialog-actions .btn-link {
+    min-height: 26px;
+    margin-top: 0;
+  }
+
+  .cabinet .screen .dialog[data-panel="ready"] .dialog-lead {
+    order: 3;
+    margin-top: 8px;
+    font-size: 9.5px;
+    line-height: 1.55;
+  }
+
+  .cabinet .screen .dialog[data-panel="ready"] .dialog-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 379px) {
+  .cabinet .pad {
+    --dpad-key: 36px;
+    --face-key: 46px;
+    --start-w: 72px;
+  }
+
+  .cabinet-top {
+    gap: 4px;
+    letter-spacing: 0.14em;
+  }
+
+  .cabinet-brand {
+    letter-spacing: 0.12em;
+  }
+}
+
+@media (min-width: 720px) {
+  .cabinet .pad {
+    --dpad-key: 40px;
+    --face-key: 58px;
+    --start-w: 92px;
+  }
+
+  .cabinet .pad {
+    row-gap: 18px;
+    padding-top: 8px;
+  }
+
+  .screen-frame {
+    margin-top: 10px;
+  }
+}
+
+/* ============================================================
+   开机扫描线
+   ============================================================ */
+
+.cabinet.is-booting .screen-frame {
+  animation: crt-on 0.62s steps(6, end) both;
+}
+
+@keyframes crt-on {
+  0% {
+    opacity: 0.1;
+    transform: scaleY(0.02);
+    filter: brightness(2.2);
+  }
+  45% {
+    opacity: 0.9;
+    transform: scaleY(1);
+    filter: brightness(1.35);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cabinet.is-booting .screen-frame {
+    animation: none;
+  }
+
+  .cabinet-led {
+    animation: none;
+  }
+}

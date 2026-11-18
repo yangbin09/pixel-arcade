@@ -32,6 +32,8 @@ export * from "./render/surface";
 export * from "./input/pointer";
 export * from "./input/keys";
 export * from "./input/swipe";
+export * from "./input/pad";
+export * from "./install";
 
 export * from "./ui/hud";
 export * from "./ui/overlay";

@@ -19,15 +19,23 @@ export interface KeyMapOptions {
   ignoreInteractive?: boolean;
 }
 
+type PressHandler = (action: string, event?: KeyboardEvent) => void;
+type ReleaseHandler = (action: string, event?: KeyboardEvent) => void;
+
 /**
- * 键盘输入：把物理键映射成语义动作（left/right/rotate/pause…）。
+ * 键盘 + 虚拟手柄输入：把物理键/屏幕按键映射成语义动作（left/right/rotate…）。
  * 同时维护 held 集合，支持长按连续操作。
+ *
+ * 键盘和虚拟手柄分开记，避免「键盘按住左 + 手柄松开左」把键盘的手感弄丢。
  */
 export class KeyMap {
   readonly bindings: Record<string, string>;
+  /** 物理键盘当前按住的语义动作。 */
   readonly held = new Set<string>();
-  private pressHandlers = new Set<(action: string, event: KeyboardEvent) => void>();
-  private releaseHandlers = new Set<(action: string, event: KeyboardEvent) => void>();
+  /** 虚拟手柄当前按住的语义动作。 */
+  private readonly virtualHeld = new Set<string>();
+  private pressHandlers = new Set<PressHandler>();
+  private releaseHandlers = new Set<ReleaseHandler>();
   private readonly options: Required<KeyMapOptions>;
 
   constructor(bindings: Record<string, string>, options: KeyMapOptions = {}) {
@@ -41,18 +49,31 @@ export class KeyMap {
     window.addEventListener("blur", this.onBlur);
   }
 
-  onPress(handler: (action: string, event: KeyboardEvent) => void): () => void {
+  onPress(handler: PressHandler): () => void {
     this.pressHandlers.add(handler);
     return () => this.pressHandlers.delete(handler);
   }
 
-  onRelease(handler: (action: string, event: KeyboardEvent) => void): () => void {
+  onRelease(handler: ReleaseHandler): () => void {
     this.releaseHandlers.add(handler);
     return () => this.releaseHandlers.delete(handler);
   }
 
   isDown(action: string): boolean {
-    return this.held.has(action);
+    return this.held.has(action) || this.virtualHeld.has(action);
+  }
+
+  /** 虚拟手柄按下：和键盘共用同一套动作，但不伪造 KeyboardEvent。 */
+  press(action: string): void {
+    const wasDown = this.isDown(action);
+    this.virtualHeld.add(action);
+    if (!wasDown) for (const handler of this.pressHandlers) handler(action);
+  }
+
+  /** 虚拟手柄松开。 */
+  release(action: string): void {
+    if (!this.virtualHeld.delete(action)) return;
+    if (!this.held.has(action)) for (const handler of this.releaseHandlers) handler(action);
   }
 
   /** 某个键是否绑定成这个动作。 */
@@ -67,18 +88,23 @@ export class KeyMap {
     if (!action) return;
     if (this.options.preventDefault) event.preventDefault();
     if (event.repeat) return;
+    const wasDown = this.isDown(action);
     this.held.add(action);
-    for (const handler of this.pressHandlers) handler(action, event);
+    if (!wasDown) for (const handler of this.pressHandlers) handler(action, event);
   };
 
   private onKeyUp = (event: KeyboardEvent): void => {
     const action = this.actionOf(event);
     if (!action) return;
     this.held.delete(action);
-    for (const handler of this.releaseHandlers) handler(action, event);
+    if (!this.virtualHeld.has(action)) for (const handler of this.releaseHandlers) handler(action, event);
   };
 
-  private onBlur = (): void => this.held.clear();
+  private onBlur = (): void => {
+    const released = [...this.held].filter((action) => !this.virtualHeld.has(action));
+    this.held.clear();
+    for (const action of released) for (const handler of this.releaseHandlers) handler(action);
+  };
 
   destroy(): void {
     window.removeEventListener("keydown", this.onKeyDown);
@@ -87,5 +113,6 @@ export class KeyMap {
     this.pressHandlers.clear();
     this.releaseHandlers.clear();
     this.held.clear();
+    this.virtualHeld.clear();
   }
 }

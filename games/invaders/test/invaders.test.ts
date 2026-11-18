@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DRAG_SENSITIVITY,
   ENEMY_COLS,
   ENEMY_MARGIN,
   ENEMY_ROWS,
@@ -23,6 +24,8 @@ import {
   enemyY,
   marchStep,
   sweptHit,
+  touchDragAnchor,
+  touchDragTarget,
   waveFireInterval,
   waveSpeed,
   type MarchState,
@@ -179,5 +182,34 @@ describe("玩家 · 边界与统计", () => {
     expect(accuracy(0, 5)).toBe(0);
     expect(accuracy(3, 4)).toBe(75);
     expect(accuracy(1, 3)).toBe(33);
+  });
+});
+
+describe("玩家 · 触摸相对拖动", () => {
+  it("灵敏度为 1.2", () => {
+    expect(DRAG_SENSITIVITY).toBeCloseTo(1.2);
+  });
+
+  it("正向拖动按灵敏度放大位移", () => {
+    const anchor = touchDragAnchor(50, 84);
+    expect(touchDragTarget(anchor, 70)).toBeCloseTo(84 + 20 * 1.2);
+  });
+
+  it("反向拖动同样按灵敏度放大", () => {
+    const anchor = touchDragAnchor(50, 84);
+    expect(touchDragTarget(anchor, 30)).toBeCloseTo(84 - 20 * 1.2);
+  });
+
+  it("拖出场地时夹在左右安全区", () => {
+    const anchor = touchDragAnchor(84, 84);
+    expect(touchDragTarget(anchor, -500)).toBe(SHIP_MARGIN);
+    expect(touchDragTarget(anchor, 500)).toBe(FIELD_W - SHIP_MARGIN);
+  });
+
+  it("手指离飞船很远按下时不会瞬移，零位移保持原位", () => {
+    const anchor = touchDragAnchor(160, 84);
+    expect(touchDragTarget(anchor, 160)).toBe(84);
+    // 灵敏度可以显式覆盖。
+    expect(touchDragTarget(anchor, 170, 2)).toBeCloseTo(84 + 10 * 2);
   });
 });

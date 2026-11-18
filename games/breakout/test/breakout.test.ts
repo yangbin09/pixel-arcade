@@ -7,6 +7,7 @@ import {
   BRICK_ORIGIN_X,
   BRICK_ROWS,
   BRICK_W,
+  DRAG_SENSITIVITY,
   FIELD_H,
   FIELD_W,
   MAX_BOUNCE_ANGLE,
@@ -28,6 +29,8 @@ import {
   paddleMaxX,
   speedForLevel,
   substepsFor,
+  touchDragAnchor,
+  touchDragTarget,
   type Rect,
 } from "../src/logic";
 import { meta } from "../src/meta";
@@ -190,6 +193,37 @@ describe("球速", () => {
   it("上限 240，不会因为关卡很大而超速", () => {
     expect(speedForLevel(99)).toBe(MAX_SPEED);
     expect(speedForLevel(0)).toBe(120);
+  });
+});
+
+describe("挡板 · 触摸相对拖动", () => {
+  it("灵敏度为 1.35", () => {
+    expect(DRAG_SENSITIVITY).toBeCloseTo(1.35);
+  });
+
+  it("正向拖动按灵敏度放大位移", () => {
+    const anchor = touchDragAnchor(50, 60);
+    expect(touchDragTarget(anchor, 70, PADDLE_W)).toBeCloseTo(60 + 20 * 1.35);
+  });
+
+  it("反向拖动同样按灵敏度放大", () => {
+    const anchor = touchDragAnchor(50, 60);
+    expect(touchDragTarget(anchor, 30, PADDLE_W)).toBeCloseTo(60 - 20 * 1.35);
+  });
+
+  it("拖出场地时按当前挡板宽度夹住", () => {
+    const anchor = touchDragAnchor(84, 60);
+    expect(touchDragTarget(anchor, -500, PADDLE_W)).toBe(PADDLE_MARGIN);
+    expect(touchDragTarget(anchor, 500, PADDLE_W)).toBe(paddleMaxX(PADDLE_W));
+    // 加长状态下右边界的可用范围更小。
+    expect(touchDragTarget(anchor, 500, PADDLE_WIDE)).toBe(paddleMaxX(PADDLE_WIDE));
+  });
+
+  it("手指离挡板很远按下时不会瞬移，零位移保持原位", () => {
+    const anchor = touchDragAnchor(150, 60);
+    expect(touchDragTarget(anchor, 150, PADDLE_W)).toBe(60);
+    // 灵敏度可以显式覆盖。
+    expect(touchDragTarget(anchor, 160, PADDLE_W, 2)).toBeCloseTo(60 + 10 * 2);
   });
 });
 

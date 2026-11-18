@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AUTO_LANE,
   BLOCK_H,
   BLOCK_W,
   FLOOR_Y,
@@ -20,6 +21,7 @@ import {
   lowestHittable,
   lowestHittableAny,
   multiplierFor,
+  pickLaneTarget,
   pointsFor,
   speedForHits,
   speedForLevel,
@@ -92,6 +94,36 @@ describe("tiles · 判定窗口", () => {
     const blocks = [block(1, 0, 200), block(2, 2, 217), block(3, 3, 120)];
     expect(lowestHittableAny(blocks)?.id).toBe(2);
     expect(lowestHittableAny([block(1, 0, 0)])).toBeNull();
+  });
+});
+
+describe("tiles · 手柄选轨", () => {
+  it("选中轨道有可点块时，取该轨道最下方的一块", () => {
+    const blocks = [block(1, 0, 200), block(2, 1, 210), block(3, 1, 178), block(4, 2, 217)];
+    expect(pickLaneTarget(blocks, 1)?.id).toBe(2);
+    expect(pickLaneTarget(blocks, 0)?.id).toBe(1);
+  });
+
+  it("选中轨道空着时回退到全场最下方，不判 miss", () => {
+    const blocks = [block(1, 0, 200), block(2, 2, 217)];
+    expect(pickLaneTarget(blocks, 3)?.id).toBe(2);
+  });
+
+  it("选中轨道只有还没进入判定区的块时也算空，回退到全场", () => {
+    const blocks = [block(1, 1, HIT_Y - BLOCK_H - 1), block(2, 3, 210)];
+    expect(pickLaneTarget(blocks, 1)?.id).toBe(2);
+  });
+
+  it("所有轨道都没有可点块时返回 null", () => {
+    expect(pickLaneTarget([block(1, 0, 40), block(2, 3, 120)], 0)).toBeNull();
+    expect(pickLaneTarget([], 2)).toBeNull();
+  });
+
+  it("AUTO_LANE（-1）等价于直接砸全场最下方", () => {
+    const blocks = [block(1, 0, 200), block(2, 3, 217)];
+    expect(AUTO_LANE).toBe(-1);
+    expect(pickLaneTarget(blocks, AUTO_LANE)?.id).toBe(2);
+    expect(pickLaneTarget(blocks, AUTO_LANE)).toBe(lowestHittableAny(blocks));
   });
 });
 

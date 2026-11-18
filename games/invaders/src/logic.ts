@@ -122,6 +122,29 @@ export function clampShipX(x: number): number {
   return Math.min(FIELD_W - SHIP_MARGIN, Math.max(SHIP_MARGIN, x));
 }
 
+/** 触摸相对拖动的灵敏度：手指横移 1px，飞船走 1.2px。 */
+export const DRAG_SENSITIVITY = 1.2;
+
+/** 一次触摸拖动的锚点：手指起点 + 按下瞬间的飞船位置。 */
+export interface TouchDragAnchor {
+  startX: number;
+  shipX: number;
+}
+
+/** 记录触摸拖动锚点，不移动飞船。 */
+export function touchDragAnchor(pointerX: number, shipX: number): TouchDragAnchor {
+  return { startX: pointerX, shipX };
+}
+
+/** 相对拖动目标：锚点 + 手指横移 × 灵敏度，再夹到左右安全区。 */
+export function touchDragTarget(
+  anchor: TouchDragAnchor,
+  pointerX: number,
+  sensitivity = DRAG_SENSITIVITY,
+): number {
+  return clampShipX(anchor.shipX + (pointerX - anchor.startX) * sensitivity);
+}
+
 /**
  * 扫掠式 AABB 命中：子弹从 fromY 移动到 toY，跨度可能一帧超过敌机高度。
  *

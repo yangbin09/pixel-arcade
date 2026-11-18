@@ -57,6 +57,10 @@ export const meta: GameMeta = {
   duration: "30–90 秒",
   tags: ["每块 +10 ×连击", "每 10 块加速", "踩空即结束"],
   size: { w: 168, h: 252 },
+  pad: {
+    dpad: "lr",
+    a: { action: "action", label: "命中" },
+  },
   scoreMode: "high",
   scoreLabel: "本局得分",
   bestLabel: "历史最高",

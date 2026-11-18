@@ -78,6 +78,10 @@ export const meta: GameMeta = {
   duration: "3–10 分钟",
   tags: ["合并得分", "一步一存档", "无路可走结束"],
   size: { w: 168, h: 168 },
+  pad: {
+    dpad: "four",
+    b: { action: "secondary", label: "撤销" },
+  },
   scoreMode: "high",
   countdown: false,
   hud: [

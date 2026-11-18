@@ -73,6 +73,11 @@ export const meta: GameMeta = {
   duration: "1–5 分钟",
   tags: ["长按插旗", "首点安全", "清完即通关"],
   size: { w: 168, h: 168 },
+  pad: {
+    dpad: "four",
+    a: { action: "primary", label: "翻开" },
+    b: { action: "secondary", label: "插旗" },
+  },
   scoreMode: "low",
   scoreLabel: "用时（秒）",
   bestLabel: "最快纪录",

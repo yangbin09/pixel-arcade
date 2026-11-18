@@ -66,6 +66,9 @@ export const meta: GameMeta = {
   duration: "45 秒一局",
   tags: ["存活 +2/秒", "擦身 +15", "护盾挡一次"],
   size: { w: 168, h: 210 },
+  pad: {
+    dpad: "four",
+  },
   scoreMode: "high",
   hud: [
     { key: "time", label: "时间", kind: "time", pad: 2, minChars: 2, tone: "time" },
