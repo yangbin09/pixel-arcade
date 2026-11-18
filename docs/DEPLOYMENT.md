@@ -295,8 +295,21 @@ ssh root@96.47.231.250 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-ava
 | VPS deploy 报 SSH 认证失败 | `VPS_SSH_KEY` 换行是否完整；服务器 `/root/.ssh/authorized_keys` 是否有 `restrict` 公钥；`fail2ban` 是否封了 runner IP（`fail2ban-client status sshd`） |
 | VPS 部署后 502 | 容器健康检查是否通过：`ssh ... 'docker ps; docker logs --tail 100 pixel-arcade'` |
 | 无头 Chrome 找不到 | 脚本支持 `CHROME_PATH` 覆盖；ubuntu-latest 自带 `google-chrome` |
+| 偶发 `Chrome DevTools 没有启动` | 脚本已内置 45s 启动等待 + stderr 诊断；偶发冷启动慢直接 rerun 失败 job；持续失败时检查 runner 上 `google-chrome --version` 是否可执行 |
 | 冒烟失败但本地正常 | CI 是 `SMOKE_STRICT=1`（控制台错误也算失败），看 action 里的 `smoke-report` artifact |
 | `workflow_run` 部署没触发 | 只有 CI 在 `master` 上 `conclusion=success` 才触发；PR 不会触发部署 |
+
+## 上线验证记录
+
+2026-11-18 首次接入完成后的实测结果：
+
+| 链路 / 节点 | 结果 |
+| --- | --- |
+| CI 门禁（路径过滤 → typecheck → 单测 203 项分 2 shard → 双产物构建 → 游戏清单 → 无头冒烟 → 体积预算 → 镜像 → gate） | ✅ 全绿 |
+| Appwrite 发布（构建 → 上传部署 → 激活 → 线上验证） | ✅ 部署 `ready`，线上 10/10 游戏可玩、0 控制台错误 |
+| VPS 发布（镜像构建 → SSH 上传 → 容器重启/健康检查 → nginx 反代 → 线上验证） | ✅ 部署成功，容器 healthy，线上 10/10 游戏可玩、0 控制台错误 |
+| 定时巡检（verify-live.yml） | ✅ 两个目标 job 独立可手动触发，已排定每日 11:17（北京时间）自动运行 |
+| Release（v* tag → 构建 + GitHub Release 资产） | ✅ `v1.0.0` 已验证（site.zip / 单文件离线版 / SHA256SUMS） |
 
 ## 相关文件
 
