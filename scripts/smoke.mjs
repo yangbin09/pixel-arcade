@@ -45,7 +45,8 @@ mkdirSync(OUT, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function waitForDevtools() {
-  for (let i = 0; i < 100; i += 1) {
+  for (let i = 0; i < 300; i += 1) {
+    if (chromeExit !== null) break;
     try {
       const res = await fetch(`http://127.0.0.1:${PORT}/json/version`);
       if (res.ok) return;
@@ -54,7 +55,9 @@ async function waitForDevtools() {
     }
     await sleep(150);
   }
-  throw new Error("Chrome DevTools 没有启动");
+  throw new Error(
+    `Chrome DevTools 没有启动（exit=${chromeExit ?? "still running"}）\n${chromeStderr.slice(-2000)}`,
+  );
 }
 
 function connect(wsUrl) {
@@ -113,6 +116,9 @@ async function evaluate(client, expression) {
   return result.result.value;
 }
 
+let chromeStderr = "";
+let chromeExit = null;
+
 const chrome = spawn(
   CHROME,
   [
@@ -133,8 +139,15 @@ const chrome = spawn(
     ...ciChromeArgs(),
     "about:blank",
   ],
-  { stdio: "ignore" },
+  { stdio: ["ignore", "ignore", "pipe"] },
 );
+chrome.on("exit", (code) => {
+  chromeExit = code;
+});
+chrome.stderr.on("data", (data) => {
+  chromeStderr += data.toString();
+  if (chromeStderr.length > 8000) chromeStderr = chromeStderr.slice(-8000);
+});
 
 const report = [];
 
