@@ -8,6 +8,8 @@
 
 .screen {
   aspect-ratio: var(--screen-ratio, 1 / 1);
+  max-height: calc(100dvh - 230px);
+  min-height: 240px;
   touch-action: none;
   overscroll-behavior: none;
 }
@@ -123,6 +125,7 @@
 .page-play:fullscreen .screen {
   flex: 1 1 auto;
   min-height: 0;
+  max-height: none;
   margin-top: 6px;
   aspect-ratio: auto;
   background: transparent;
@@ -168,6 +171,7 @@ body.page-play.is-immersive .play-wrap {
 body.page-play.is-immersive .screen {
   flex: 1 1 auto;
   min-height: 0;
+  max-height: none;
   margin-top: 6px;
   aspect-ratio: auto;
   background: transparent;

@@ -79,45 +79,42 @@ export function enemyY(row: number, offsetY: number): number {
   return ENEMY_START_Y + row * ENEMY_STEP_Y + offsetY;
 }
 
-export interface MarchResult {
-  /** 移动后的整体偏移。 */
+export interface MarchState {
+  /** 编队整体的左右偏移。 */
   offset: number;
-  /** 本帧之后的方向：1 向右，-1 向左。 */
+  /** 当前方向：1 向右，-1 向左。 */
   dir: -1 | 1;
-  /** 是否撞到左右边界（撞到就要下压 8px）。 */
-  dropped: boolean;
 }
 
 /**
- * 编队整体横移一步。
+ * 编队整体横移一步（原地修改 state，避免每帧新建对象）。
  *
- * 撞边时夹在边界上并反向，同时报告 dropped；调用方负责把编队下压。
+ * 撞边时夹在边界上并反向，返回 true 表示需要下压 8px。
  * 夹在边界上而不是原路反弹，保证编队永远不会越出左右安全区。
  */
 export function marchStep(
-  offset: number,
-  dir: -1 | 1,
+  state: MarchState,
   step: number,
   min = FORMATION_MIN_X,
   max = FORMATION_MAX_X,
-): MarchResult {
-  if (!(step > 0) || max <= min) return { offset, dir, dropped: false };
+): boolean {
+  if (!(step > 0) || max <= min) return false;
 
-  let next = offset + dir * step;
-  let nextDir = dir;
-  let dropped = false;
+  const next = state.offset + state.dir * step;
 
   if (next <= min) {
-    next = min;
-    nextDir = 1;
-    dropped = true;
-  } else if (next >= max) {
-    next = max;
-    nextDir = -1;
-    dropped = true;
+    state.offset = min;
+    state.dir = 1;
+    return true;
+  }
+  if (next >= max) {
+    state.offset = max;
+    state.dir = -1;
+    return true;
   }
 
-  return { offset: next, dir: nextDir, dropped };
+  state.offset = next;
+  return false;
 }
 
 /** 飞船中心 x 的合法范围。 */

@@ -4,9 +4,4 @@ dist-standalone
 .git
 .gitignore
 .artifacts
-docs
-README.md
 *.log
-assets
-games/whack/index.html
-games/whack/whack.js

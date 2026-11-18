@@ -93,7 +93,7 @@
 
 ## 5. blocks · 俄罗斯方块
 
-- `size: { w: 168, h: 336 }`，`scoreMode: "high"`，`spaceAction: "action"`
+- `size: { w: 200, h: 392 }`（左侧 10×20 棋盘 + 右侧 NEXT 栏 + 底部 44px 触屏按键区），`scoreMode: "high"`，`spaceAction: "action"`
 - HUD：`score`、`lines`（消行，3 位）、`level`（等级，2 位）
 - 文案：tagline `十行一级，堆到顶就结束`；duration `3–8 分钟`
 - tags：`消行 100/300/500/800`、`每 10 行升级`、`硬降 +2/格`

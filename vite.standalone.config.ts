@@ -25,6 +25,7 @@ export default defineConfig({
     target: "es2020",
     cssCodeSplit: false,
     assetsInlineLimit: 100_000_000,
+    copyPublicDir: false,
     reportCompressedSize: false,
     rollupOptions: {
       input: r("standalone/index.html"),

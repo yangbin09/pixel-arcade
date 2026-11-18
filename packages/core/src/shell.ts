@@ -10,7 +10,7 @@ import { SwipeInput } from "./input/swipe";
 import { P } from "./palette";
 import { Sound } from "./audio";
 import { Store } from "./store";
-import { must, isInteractiveTarget, rafThrottle } from "./dom";
+import { must, isInteractiveTarget } from "./dom";
 import { createLiveRegion } from "./a11y";
 import { drawCountdownOverlay } from "./ui/countdown";
 import { paintAllIcons } from "./render/icons";
@@ -413,6 +413,7 @@ export class PlayShell {
     }
     this.startLoop();
     this.last = performance.now();
+    this.field.focus({ preventScroll: true });
   }
 
   pause(from: GameState = this.state): void {
@@ -437,6 +438,7 @@ export class PlayShell {
     }
     this.last = performance.now();
     this.startLoop();
+    this.field.focus({ preventScroll: true });
   }
 
   togglePause(): void {

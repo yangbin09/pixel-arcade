@@ -10,6 +10,21 @@
 
 ---
 
+## 十款游戏
+
+| # | id | 名称 | 类型 | 一局 | 新玩法要点 |
+|---|---|---|---|---|---|
+| 01 | `whack` | 打地鼠 | 反应 | 30 秒 | 连击倍率、金地鼠 |
+| 02 | `snake` | 贪吃蛇 | 街机 | 1–3 分钟 | 固定步进 + 插值、转向队列 |
+| 03 | `breakout` | 打砖块 | 街机 | 2–4 分钟 | AABB + 子步进、掉落道具 |
+| 04 | `invaders` | 像素入侵者 | 射击 | 2–4 分钟 | 实体池、波次、自动射击 |
+| 05 | `blocks` | 俄罗斯方块 | 益智 | 3–8 分钟 | 7-bag、锁延迟、消行动画 |
+| 06 | `merge` | 2048 | 益智 | 3–10 分钟 | 滑动合并、一步撤销 |
+| 07 | `memory` | 记忆翻牌 | 休闲 | 30 秒–2 分钟 | 翻牌动画、低分计时 |
+| 08 | `dodge` | 陨石雨 | 生存 | 45 秒 | 连续转向、护盾、擦身判定 |
+| 09 | `tiles` | 别踩白块 | 节奏 | 30–90 秒 | 判定窗口、速度曲线 |
+| 10 | `mines` | 像素扫雷 | 逻辑 | 1–5 分钟 | 首点安全、洪水填充、长按插旗 |
+
 ## 快速开始
 
 ```bash
@@ -38,6 +53,22 @@ npm run docker:up        # docker compose up -d --build
 
 局域网手机测试：`docker compose up` 后访问 `http://<电脑IP>:8080`，
 点开始会自动进全屏（iPhone Safari 走沉浸模式）。
+
+### 部署到 VPS
+
+仓库自带一个基于 `ssh2` 的部署脚本（不依赖 pnpm/rsync/PuTTY）：
+
+```bash
+# 只读检查：系统、Docker、端口、磁盘
+DEPLOY_HOST=<ip> DEPLOY_USER=root DEPLOY_PASSWORD=<password> node scripts/deploy.mjs check
+
+# 打包源码 → 上传 → 服务器上 docker build → 重启容器 → 刷新 nginx 反代
+DEPLOY_HOST=<ip> DEPLOY_USER=root DEPLOY_PASSWORD=<password> node scripts/deploy.mjs deploy
+```
+
+部署形态：容器只监听 `127.0.0.1:8080`，宿主 nginx 负责 TLS 与 80→443 跳转，
+`deploy/games-site.conf` 是反代配置（安装前会备份原配置，`nginx -t` 失败自动回滚）。
+密码只通过环境变量传入，不要写进文件或提交到仓库。
 
 ---
 

@@ -288,6 +288,74 @@ try {
       }))()`,
     );
 
+    // 真事件：点一下画布中心、按一次方向键、再拖一下，抓运行时错误
+    const box = await evaluate(
+      client,
+      `(() => {
+        const f = document.querySelector('#field');
+        const r = f.getBoundingClientRect();
+        return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), w: Math.round(r.width) };
+      })()`,
+    );
+    await client.send("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x: box.x,
+      y: box.y,
+      button: "left",
+      buttons: 1,
+      clickCount: 1,
+    });
+    await client.send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: box.x,
+      y: box.y,
+      button: "left",
+      buttons: 0,
+      clickCount: 1,
+    });
+    await client.send("Input.dispatchKeyEvent", {
+      type: "keyDown",
+      key: "ArrowLeft",
+      code: "ArrowLeft",
+      windowsVirtualKeyCode: 37,
+      nativeVirtualKeyCode: 37,
+    });
+    await client.send("Input.dispatchKeyEvent", {
+      type: "keyUp",
+      key: "ArrowLeft",
+      code: "ArrowLeft",
+      windowsVirtualKeyCode: 37,
+      nativeVirtualKeyCode: 37,
+    });
+    await client.send("Input.dispatchMouseEvent", { type: "mousePressed", x: box.x, y: box.y, button: "left", buttons: 1, clickCount: 1 });
+    for (let i = 1; i <= 4; i += 1) {
+      await client.send("Input.dispatchMouseEvent", {
+        type: "mouseMoved",
+        x: box.x + (box.w / 6) * i,
+        y: box.y,
+        button: "left",
+        buttons: 1,
+      });
+    }
+    await client.send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: box.x + box.w / 2,
+      y: box.y,
+      button: "left",
+      buttons: 0,
+      clickCount: 1,
+    });
+    await sleep(600);
+    const afterInput = await evaluate(
+      client,
+      `(() => ({
+        state: document.body.dataset.gameState,
+        hud: [...document.querySelectorAll('.stat')].map((st) => st.querySelector('canvas')?.getAttribute('aria-label')),
+        resultVisible: !document.querySelector('[data-panel="result"]')?.hidden,
+      }))()`,
+    );
+    await shoot(`${id}-after-input`);
+
     report.push({
       game: id,
       ready,
@@ -295,11 +363,12 @@ try {
       playing,
       paused,
       resumed,
+      afterInput,
       errors: [...errors],
     });
 
     console.log(
-      `${id.padEnd(9)} state=${ready.state}->${playing.state} pause=${paused.state}/${paused.pausePanelVisible} resume=${resumed.state} canvas=${ready.field.backing} css=${ready.field.w}x${ready.field.h} hud=${ready.hud.map((h) => h.aria).join("|")} errors=${errors.length}`,
+      `${id.padEnd(9)} state=${ready.state}->${playing.state} pause=${paused.state} resume=${resumed.state} input=${afterInput.state}${afterInput.resultVisible ? "/result" : ""} canvas=${ready.field.backing} errors=${errors.length}`,
     );
   }
 

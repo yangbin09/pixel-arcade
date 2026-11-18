@@ -10,6 +10,7 @@ COPY packages ./packages
 COPY games ./games
 COPY site ./site
 COPY play ./play
+COPY public ./public
 COPY scripts ./scripts
 COPY index.html tsconfig.json vite.config.ts vite.standalone.config.ts ./
 
