@@ -1033,12 +1033,14 @@ body.page-play.is-immersive .play-wrap {
 }
 
 @media (min-height: 741px) and (max-height: 900px) and (max-width: 700px) {
-  /* 只有 blocks 这种 1:2 竖长机位需要把上下装饰收一点，
-     让整数缩放从 unit 2 回到 unit 3（300×588）；1:1/1:1.25 的机位保持原尺寸。 */
+  /* 只有 blocks 这种 1:2 竖长机位需要把上下装饰收一点。
+     注意：D-pad 命中区保持 36px 下限，不再压到 31px。 */
   .cabinet[data-ratio="tall"] .pad {
-    --dpad-key: 31px;
+    --dpad-key: 36px;
     --face-key: 47px;
     --start-w: 72px;
+    row-gap: 6px;
+    padding-top: 2px;
   }
 
   .cabinet[data-ratio="tall"] .cabinet-top {
@@ -1051,8 +1053,13 @@ body.page-play.is-immersive .play-wrap {
   }
 
   .cabinet[data-ratio="tall"] .screen-frame {
-    margin-top: 2px;
+    margin-top: 0;
     padding: 3px;
+  }
+
+  /* 3px 衬边时丝印会压到玻璃上，竖长机位直接不显示 */
+  .cabinet[data-ratio="tall"] .screen-frame::after {
+    display: none;
   }
 }
 
