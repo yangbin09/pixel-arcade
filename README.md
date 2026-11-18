@@ -70,6 +70,18 @@ DEPLOY_HOST=<ip> DEPLOY_USER=root DEPLOY_PASSWORD=<password> node scripts/deploy
 `deploy/games-site.conf` 是反代配置（安装前会备份原配置，`nginx -t` 失败自动回滚）。
 密码只通过环境变量传入，不要写进文件或提交到仓库。
 
+线上检查与回滚：
+
+```bash
+ssh root@<ip> 'docker ps --filter name=pixel-arcade'
+ssh root@<ip> 'docker logs --tail 50 pixel-arcade'
+ssh root@<ip> 'curl -fsS http://127.0.0.1:8080/healthz'
+
+# 回滚 nginx（换回旧的静态站点，旧文件仍在 /var/www/games）
+ssh root@<ip> 'ls /root/games.conf.bak.* | tail -1'
+ssh root@<ip> 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-available/games.conf && nginx -t && systemctl reload nginx'
+```
+
 ---
 
 ## 目录结构

@@ -157,6 +157,12 @@ export class PlayShell {
     this.game.render();
     this.startLoop();
 
+    // 动态 import 的游戏可能在首次布局之后才挂载，补一次强制 re-fit
+    requestAnimationFrame(() => {
+      this.surface.schedule();
+      this.fxSurface.schedule();
+    });
+
     window.addEventListener("resize", this.onResize);
     window.addEventListener("orientationchange", this.onResize);
   }
