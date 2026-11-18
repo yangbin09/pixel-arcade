@@ -1,7 +1,6 @@
 /* ============================================================
-   PAD COLLAPSE · 手柄折叠
-   结构：.pad > .pad-handle（始终可见）+ .pad-controls（可隐藏）
-   收起时只留一条 18px 的 PAD 拉手，屏幕自动吃掉高度。
+   PAD COLLAPSE · 手柄折叠（结构 + 状态，视觉尺寸在 console.css）
+   结构：.pad > .pad-handle（始终可见）+ .pad-controls（收起时 [hidden]）
    ============================================================ */
 
 .pad {
@@ -17,9 +16,6 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 8px;
-  min-height: 96px;
-  padding: 6px 2px 0;
 }
 
 .pad-controls[hidden] {
@@ -33,7 +29,6 @@
   justify-content: center;
   gap: 6px;
   width: 100%;
-  height: 18px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -47,7 +42,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 视觉只有 18px，触摸热区上下各扩 10px */
+/* 视觉很薄，触摸热区上下各扩；最终尺寸由 console.css 控制 */
 .pad-handle::before {
   position: absolute;
   inset: -10px 0;
@@ -73,7 +68,7 @@
   transform: rotate(0deg);
 }
 
-/* 机台开关视觉很小，上下补触摸热区 */
+/* 机台开关视觉很小，上下补触摸热区；最终热区在 console.css 覆盖 */
 .cabinet-switch {
   position: relative;
 }
@@ -82,17 +77,4 @@
   position: absolute;
   inset: -8px 0;
   content: "";
-}
-
-@media (max-height: 720px) {
-  .pad-controls {
-    min-height: 84px;
-    padding-top: 3px;
-  }
-}
-
-@media (min-width: 720px) {
-  .pad-controls {
-    min-height: 112px;
-  }
 }

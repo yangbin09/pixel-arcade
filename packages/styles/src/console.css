@@ -444,14 +444,13 @@
   --face-key: clamp(46px, 13.6vw, 58px);
   --start-w: clamp(76px, 20vw, 92px);
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  column-gap: clamp(6px, 2vw, 14px);
-  row-gap: clamp(10px, 1.8vh, 18px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
   min-height: 0;
   margin-top: auto;
-  padding: 6px 2px 0;
+  padding: 0 2px;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -461,11 +460,12 @@
   display: none;
 }
 
-/* 拉手：一排扬声器孔中间的一枚小卡扣（新结构才有） */
+/* 控制区盖板：展开时是手柄上方的一条盖沿，收起时是整块滑到底的盖板 */
 .cabinet .pad-handle {
   position: relative;
+  isolation: isolate;
   display: flex;
-  grid-column: 1 / -1;
+  flex: none;
   align-items: center;
   justify-content: center;
   gap: 5px;
@@ -473,25 +473,83 @@
   height: 22px;
   padding: 0;
   border: 0;
-  border-top: 1px solid rgba(74, 60, 104, 0.42);
-  background:
-    linear-gradient(180deg, rgba(255, 248, 232, 0.035), transparent 70%);
-  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(74, 60, 104, 0.6);
+  background-image:
+    radial-gradient(
+      circle at 50% 50%,
+      var(--c-void) 0 0.6px,
+      var(--c-line-hi) 0.7px 1.6px,
+      rgba(255, 248, 232, 0.18) 1.7px 1.9px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      var(--c-void) 0 0.6px,
+      var(--c-line-hi) 0.7px 1.6px,
+      rgba(255, 248, 232, 0.18) 1.7px 1.9px,
+      transparent 2px
+    ),
+    linear-gradient(180deg, rgba(255, 248, 232, 0.06), transparent 58%),
+    linear-gradient(180deg, var(--c-panel-2) 0%, var(--c-panel) 62%, var(--c-night) 100%);
+  background-position:
+    9px 50%,
+    calc(100% - 9px) 50%,
+    0 0,
+    0 0;
+  background-repeat: no-repeat;
+  background-size:
+    6px 6px,
+    6px 6px,
+    auto,
+    auto;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.09),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.38),
+    0 -2px 0 rgba(0, 0, 0, 0.2);
   color: var(--c-lav);
   font-family: var(--font-mono);
   font-size: 7px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   line-height: 1;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: color 0.12s linear;
+  transition:
+    color 0.12s linear,
+    border-color 0.12s linear,
+    box-shadow 0.12s linear;
 }
 
+/* 触摸热区：22px 盖沿，44px+ 命中 */
 .cabinet .pad-handle::before {
   position: absolute;
   inset: -12px 0;
   content: "";
+}
+
+/* 中间的实体拉手片：三条细筋 + 收边 */
+.cabinet .pad-handle::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: 62px;
+  height: 14px;
+  border: 1px solid rgba(74, 60, 104, 0.85);
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 5px,
+      rgba(0, 0, 0, 0.16) 5px 6px
+    ),
+    linear-gradient(180deg, var(--c-panel-2), var(--c-night));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.1),
+    0 1px 0 rgba(0, 0, 0, 0.35);
+  content: "";
+  pointer-events: none;
+  transform: translate(-50%, -50%);
 }
 
 .cabinet .pad-handle:hover,
@@ -506,19 +564,48 @@
 
 .cabinet .pad-handle i {
   display: block;
-  width: 0;
-  height: 0;
-  border-right: 3.5px solid transparent;
-  border-bottom: 4.5px solid currentColor;
-  border-left: 3.5px solid transparent;
+  width: 8px;
+  height: 6px;
+  border: 0;
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 79% 100%, 50% 44%, 21% 100%, 0 100%);
   transform: rotate(180deg);
   transition: transform 0.16s steps(2, end);
 }
 
-/* 新结构把方向键/START/A、B 包在 .pad-controls 里；
-   display:contents 让它们直接参与 .pad 的三列网格，旧结构也能用。 */
+/* 收起：整块盖板滑到底，亮起金色小箭头，但不抢屏幕 */
+.cabinet .pad.is-collapsed .pad-handle {
+  color: var(--c-gold);
+  border-top-color: rgba(243, 168, 65, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.12),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.38),
+    0 -3px 0 rgba(0, 0, 0, 0.24),
+    0 -10px 18px rgba(0, 0, 0, 0.18);
+}
+
+.cabinet .pad.is-collapsed .pad-handle::after {
+  border-color: rgba(243, 168, 65, 0.55);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 5px,
+      rgba(0, 0, 0, 0.2) 5px 6px
+    ),
+    linear-gradient(180deg, rgba(243, 168, 65, 0.11), rgba(29, 24, 48, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 232, 0.12),
+    0 0 8px rgba(243, 168, 65, 0.12);
+}
+
+/* 方向键 / START / A、B 的三列网格在这里，不再放在 .pad 上 */
 .cabinet .pad-controls {
-  display: contents;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: clamp(6px, 2vw, 14px);
+  min-height: 0;
+  padding: clamp(10px, 1.8vh, 18px) 0 0;
 }
 
 .cabinet .pad-controls[hidden] {
@@ -933,6 +1020,21 @@ body.page-play.is-immersive .play-wrap:not(.is-chrome-hidden) .cabinet:has(.pad.
   --console-frame-max: calc(100dvh - 212px);
 }
 
+/* 1:2 / 竖长机位：顶栏收起后优先让屏幕吃满可用高度。
+   240px 的余量刚好给 blocks 留出 300×588 的整数缩放（frame ≥ 596）。
+   只作用于非 iOS 浏览器，iOS 的底栏 50px 由下面的规则继续兜底。 */
+body.page-play.is-immersive:not(.is-ios-browser)
+  .play-wrap.is-chrome-hidden
+  .cabinet[data-ratio="tall"]
+  .screen-frame,
+.play-wrap:fullscreen.is-chrome-hidden .cabinet[data-ratio="tall"] .screen-frame,
+.page-play:fullscreen
+  .play-wrap.is-chrome-hidden
+  .cabinet[data-ratio="tall"]
+  .screen-frame {
+  --console-frame-max: calc(100dvh - 240px);
+}
+
 /* iPhone Safari（非 PWA）的底栏是浏览器 UI，safe-area 不包含它。
    沉浸时额外留 50px，PWA / standalone 没有 is-ios-browser，不受影响。 */
 body.page-play.is-ios-browser.is-immersive .play-wrap {
@@ -998,9 +1100,8 @@ body.page-play.is-immersive .play-wrap {
     height: 20px;
   }
 
-  .cabinet .pad {
-    row-gap: 9px;
-    padding-top: 4px;
+  .cabinet .pad-controls {
+    padding-top: 9px;
   }
 
   .cabinet .stat {
@@ -1039,8 +1140,10 @@ body.page-play.is-immersive .play-wrap {
     --dpad-key: 36px;
     --face-key: 47px;
     --start-w: 72px;
-    row-gap: 6px;
-    padding-top: 2px;
+  }
+
+  .cabinet[data-ratio="tall"] .pad-controls {
+    padding-top: 8px;
   }
 
   .cabinet[data-ratio="tall"] .cabinet-top {
@@ -1151,9 +1254,8 @@ body.page-play.is-immersive .play-wrap {
     --start-w: 92px;
   }
 
-  .cabinet .pad {
-    row-gap: 18px;
-    padding-top: 8px;
+  .cabinet .pad-controls {
+    padding-top: 18px;
   }
 
   .screen-frame {
