@@ -1,7 +1,7 @@
 name: CI
 
 # 质量门禁（解耦的独立节点）：
-#   changes → typecheck / unit(2 shards) / build → games-check / smoke / bundle / image → gate
+#   changes → lockfile → typecheck / unit(2 shards) / build → games-check / smoke / bundle / image → gate
 # 只改文档时自动跳过代码节点；手动 workflow_dispatch 全量跑。
 
 on:
@@ -56,9 +56,23 @@ jobs:
               - 'docker-compose.yml'
               - 'bundle-budget.json'
 
+  lockfile:
+    name: Lockfile sync
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Verify package-lock.json is in sync
+        run: node scripts/ci/check-lockfile.mjs
+
   typecheck:
     name: Typecheck
-    needs: changes
+    needs: [changes, lockfile]
     if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -69,7 +83,7 @@ jobs:
 
   unit:
     name: Unit tests (${{ matrix.shard }}/2)
-    needs: changes
+    needs: [changes, lockfile]
     if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -84,7 +98,7 @@ jobs:
 
   build:
     name: Build site
-    needs: changes
+    needs: [changes, lockfile]
     if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/reusable-build-site.yml
 
@@ -143,13 +157,13 @@ jobs:
 
   image:
     name: Docker image
-    needs: changes
+    needs: [changes, lockfile]
     if: github.event_name != 'pull_request' && (needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
     uses: ./.github/workflows/reusable-build-image.yml
 
   audit:
     name: Dependency audit (informational)
-    needs: changes
+    needs: [changes, lockfile]
     if: needs.changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -163,7 +177,7 @@ jobs:
   gate:
     name: CI gate
     if: always()
-    needs: [typecheck, unit, build, games-check, smoke, bundle, image]
+    needs: [lockfile, typecheck, unit, build, games-check, smoke, bundle, image]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

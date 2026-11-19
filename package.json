@@ -20,6 +20,7 @@
     "check:games": "node scripts/check-games.mjs",
     "smoke": "node scripts/smoke.mjs",
     "ci:build": "npm run build:all",
+    "ci:lock": "node scripts/ci/check-lockfile.mjs",
     "ci:smoke": "node scripts/ci/smoke-preview.mjs",
     "ci:bundle": "node scripts/ci/bundle-budget.mjs",
     "ci:verify": "node scripts/ci/verify-live.mjs",
