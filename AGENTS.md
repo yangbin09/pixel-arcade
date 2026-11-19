@@ -235,7 +235,10 @@ node scripts/smoke.mjs whack     # 只跑指定几款
   `scripts/ci/verify-live.mjs`、`docs/`、`README.md`、`package-lock.json`。
 - **子代理禁止跑 `npm run build`**（多任务并行时抢 `dist/`），只跑
   `npx tsc --noEmit` 和 `npx vitest run games/<id>`；构建由主 agent 串行执行。
-- 任务结束前删除所有临时脚手架（`*.tmp.test.ts`、`*_tmp_*`、`diag*`）。
+- 任务结束前删除所有临时脚手架（`*.tmp.test.ts`、`*_tmp_*`、`diag*`、
+  **`.agent-tmp-*/` 目录**）。清理要在**主检出**和**所有 worktree** 各查一遍：
+  VOL.03 收尾时主检出的工作区里就残留了一个 `.agent-tmp-asteroid/`，
+  因为任务只交代了「删临时测试文件」，没覆盖到临时**目录**。
 
 ## 八、已知的特例与踩坑记录
 
