@@ -7,7 +7,7 @@ push / PR
    │
    ▼
 ┌──────────────────────────────── CI 工作流（质量门禁）────────────────────────────────┐
-│ changes(路径过滤) → typecheck → unit(2 shards) → build ─┬→ games-check            │
+│ changes(路径过滤) → lockfile(锁文件校验) → typecheck → unit(2 shards) → build ─┬→ games-check            │
 │                                                         ├→ smoke(无头 Chrome)   │
 │                                                         ├→ bundle(体积预算)     │
 │                                                         └→ image(Dockerfile)    │
@@ -46,14 +46,15 @@ push / PR
 | 节点 | 作用 | 依赖 | 备注 |
 | --- | --- | --- | --- |
 | `changes` | `dorny/paths-filter` 判断是否只改文档 | — | 文档-only 改动跳过代码节点 |
-| `typecheck` | `tsc --noEmit` | changes | |
-| `unit` | `vitest` 分 2 shard 并行 | changes | 失败互不阻塞（`fail-fast: false`） |
-| `build` | 复用 `reusable-build-site.yml` | changes | 产出 `site-dist` artifact |
+| `lockfile` | `npm install --package-lock-only` 后比对结构（忽略 npm 版本差异的 `libc` 元数据），锁文件过期即失败 | changes | 新增/删除 workspace 包忘记更新锁文件时，先给出明确报错和差异路径 |
+| `typecheck` | `tsc --noEmit` | changes、lockfile | |
+| `unit` | `vitest` 分 2 shard 并行 | changes、lockfile | 失败互不阻塞（`fail-fast: false`） |
+| `build` | 复用 `reusable-build-site.yml` | changes、lockfile | 产出 `site-dist` artifact |
 | `games-check` | 机位清单 + 每款游戏独立 chunk | build | 校验构建产物完整性 |
 | `smoke` | `vite preview` + 无头 Chrome 跑 20 款游戏 | build | 控制台错误 / 未进入 playing 即失败 |
 | `bundle` | gzip 体积预算（`bundle-budget.json`） | build | 防止误引入大依赖 |
-| `image` | 复用 `reusable-build-image.yml` | changes | 验证 Dockerfile，导出镜像 artifact |
-| `audit` | `npm audit --audit-level=high` | changes | 仅提示，不参与门禁 |
+| `image` | 复用 `reusable-build-image.yml` | changes、lockfile | 验证 Dockerfile，导出镜像 artifact |
+| `audit` | `npm audit --audit-level=high` | changes、lockfile | 仅提示，不参与门禁 |
 | `gate` | 汇总结果 | 以上 | `failure` / `cancelled` 才失败，`skipped` 允许 |
 
 ### 2. `reusable-build-site.yml` —— 可复用构建节点
@@ -301,6 +302,7 @@ ssh root@96.47.231.250 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-ava
 | 偶发 `Chrome DevTools 没有启动` | 脚本已内置 45s 启动等待 + stderr 诊断；偶发冷启动慢直接 rerun 失败 job；持续失败时检查 runner 上 `google-chrome --version` 是否可执行 |
 | SSH 密码登录被拒绝 | 服务器已关闭密码登录，只允许部署密钥；本地手工部署改用 `DEPLOY_KEY=... node scripts/deploy.mjs deploy`，救援走 DediRock 面板 VNC 控制台 |
 | 冒烟失败但本地正常 | CI 是 `SMOKE_STRICT=1`（控制台错误也算失败），看 action 里的 `smoke-report` artifact |
+| `npm ci` 报 EUSAGE / `Missing: @arcade/game-xxx from lock file` | 新增或删除 workspace 包后没重新生成锁文件。本地运行 `npm install` 提交 `package-lock.json`；CI 的 `lockfile` 节点会先给出明确报错和 diff 预览 |
 | `workflow_run` 部署没触发 | 只有 CI 在 `master` 上 `conclusion=success` 才触发；PR 不会触发部署 |
 
 ## 上线验证记录

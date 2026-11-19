@@ -81,7 +81,7 @@ GitHub Actions 全自动流水线，详细设计/密钥/回滚手册见 [docs/DE
 
 流水线（节点解耦，两条发布链路互不影响）：
 
-- **CI**：路径过滤 → typecheck → 单测（2 shard）→ 构建 → 游戏清单 → 无头 Chrome 冒烟 → 体积预算 → Dockerfile 校验 → 门禁
+- **CI**：路径过滤 → 锁文件校验 → typecheck → 单测（2 shard）→ 构建 → 游戏清单 → 无头 Chrome 冒烟 → 体积预算 → Dockerfile 校验 → 门禁
 - **Deploy Appwrite** / **Deploy VPS**：`master` 上 CI 成功后各自独立触发（也可手动 `workflow_dispatch` 指定任意 commit）
 - **Verify live**：每日定时 + 手动，无头 Chrome 验证两个线上目标；失败自动开 GitHub Issue，恢复后自动关闭
 - **Release**：推 `v*` tag 时自动产出 `pixel-arcade-site.zip`、单文件离线版和 SHA256
@@ -102,6 +102,7 @@ gh run list
 本地等价命令：
 
 ```bash
+npm run ci:lock      # 锁文件与 workspace 一致性检查（CI 同一套）
 npm run ci:build     # build:all + 体积预算
 npm run ci:smoke     # vite preview + 无头 Chrome 冒烟
 npm run ci:verify    # 需要 BASE_URL，验证线上站点
