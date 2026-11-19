@@ -39,7 +39,7 @@ export interface PadSpec {
 export interface GameMeta {
   /** 唯一 id，同时是存档 key。 */
   id: string;
-  /** 合集里的机位编号 1–20。 */
+  /** 合集里的机位编号 1–30。 */
   no: number;
   title: string;
   /** 卡片上的一句话（≤ 18 字）。 */

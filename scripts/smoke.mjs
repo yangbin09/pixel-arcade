@@ -47,6 +47,16 @@ const ALL = [
   "hop",
   "claw",
   "pong",
+  "frog",
+  "bubble",
+  "rhythm",
+  "asteroid",
+  "lander",
+  "gomoku",
+  "navy",
+  "maze",
+  "pinball",
+  "pipe",
 ];
 const ids = process.argv.slice(2).length ? process.argv.slice(2) : ALL;
 

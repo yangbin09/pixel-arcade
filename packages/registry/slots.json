@@ -18,5 +18,15 @@
   { "no": 17, "id": "sokoban" },
   { "no": 18, "id": "hop" },
   { "no": 19, "id": "claw" },
-  { "no": 20, "id": "pong" }
+  { "no": 20, "id": "pong" },
+  { "no": 21, "id": "frog" },
+  { "no": 22, "id": "bubble" },
+  { "no": 23, "id": "rhythm" },
+  { "no": 24, "id": "asteroid" },
+  { "no": 25, "id": "lander" },
+  { "no": 26, "id": "gomoku" },
+  { "no": 27, "id": "navy" },
+  { "no": 28, "id": "maze" },
+  { "no": 29, "id": "pinball" },
+  { "no": 30, "id": "pipe" }
 ]

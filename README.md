@@ -1,16 +1,16 @@
 # PIXEL ARCADE · 像素街机
 
-二十款小游戏的浏览器合集。零下载、零登录、零外部素材：所有画面都是 Canvas 像素画，
+三十款小游戏的浏览器合集。零下载、零登录、零外部素材：所有画面都是 Canvas 像素画，
 所有音效都是 WebAudio 现场合成，所有成绩只存在本机。
 
 - 竖屏优先，触屏 / 键盘 / 虚拟手柄三通路
 - **复古掌机外壳**：机台边框、CRT 扫描线、开机动画，PAD / CRT 可开关
 - 纯静态产物：`vite build` → 一个 `dist/`，Docker 里用 nginx 托管
-- 多模块：引擎、样式、UI、清单、20 个游戏各自独立，按需拆包加载
+- 多模块：引擎、样式、UI、清单、30 个游戏各自独立，按需拆包加载
 
 ---
 
-## 二十款游戏
+## 三十款游戏
 
 ### VOL. 01（1–10）
 
@@ -41,6 +41,21 @@
 | 18 | `hop` | 青蛙过河 | 街机 | 1–3 分钟 | 车道/河道、木头载人、最远行计分 |
 | 19 | `claw` | 像素抓娃娃 | 技巧 | 60–90 秒 | 对准度决定概率、三档奖品 |
 | 20 | `pong` | 像素乒乓 | 对战 | 1–3 分钟 | 竖屏上下挡板、偏移反弹、七分制 |
+
+### VOL. 03（21–30）
+
+| # | id | 名称 | 类型 | 一局 | 新玩法要点 |
+|---|---|---|---|---|---|
+| 21 | `frog` | 青蛙过河 | 街机 | 1–3 分钟 | 车道/河道、浮木载人、三条命、最远行计分 |
+| 22 | `bubble` | 泡泡龙 | 消除 | 2–5 分钟 | 蜂窝六邻接、同色三连、断连整串掉落 |
+| 23 | `rhythm` | 四轨节拍 | 音乐 | 1–2 分钟 | 帧时钟判定、PERFECT/GOOD 窗口、BPM 递增 |
+| 24 | `asteroid` | 环形陨石带 | 射击 | 2–4 分钟 | 惯性漂流、360° 转向、屏幕环绕、陨石分裂 |
+| 25 | `lander` | 月面着陆 | 物理 | 30 秒–2 分钟 | 单喷嘴推力、燃料消耗、软着陆评级 |
+| 26 | `gomoku` | 十三路五子棋 | 对战 | 2–5 分钟 | 四方向连五、评分函数 AI、AI 可被击败 |
+| 27 | `navy` | 海战棋 | 对战 | 2–5 分钟 | 隐藏布阵、命中再打、概率网格 AI |
+| 28 | `maze` | 迷雾迷宫 | 探索 | 1–4 分钟 | 程序生成、半径 3 迷雾、找齐三钥匙 |
+| 29 | `pinball` | 弹珠台 | 街机 | 1–3 分钟 | 线段挡板、4ms 子步积分、缓冲器倍率 |
+| 30 | `pipe` | 接水管 | 解谜 | 1–3 分钟 | 管道旋转、注水连通、漏水即失败 |
 
 ## 快速开始
 
@@ -120,10 +135,10 @@ DEPLOY_HOST=96.47.231.250 DEPLOY_USER=root DEPLOY_KEY=/path/to/vps_deploy_key no
 
 ```
 ├─ index.html                # 首页（机位网格由 registry + meta 自动生成）
-├─ play/index.html           # 播放壳：20 个游戏共用一个页面
+├─ play/index.html           # 播放壳：30 个游戏共用一个页面
 ├─ site/
 │  ├─ home.ts                # 首页入口：收集 meta、生成卡片、画缩略图
-│  └─ play.ts                # 播放入口：?game=<id> → 动�� import 对应游戏包
+│  └─ play.ts                # 播放入口：?game=<id> → 动态 import 对应游戏包
 ├─ packages/
 │  ├─ core/                  # 引擎：画布缩放、循环、输入、音效、HUD、弹窗
 │  ├─ ui/                    # 首页卡片组件
@@ -134,6 +149,8 @@ DEPLOY_HOST=96.47.231.250 DEPLOY_USER=root DEPLOY_KEY=/path/to/vps_deploy_key no
 │  ├─ merge/  memory/ dodge/     tiles/     mines/
 │  ├─ runner/ othello/ lights/   stack/     simon/
 │  ├─ hoop/   sokoban/ hop/      claw/      pong/
+│  ├─ frog/   bubble/  rhythm/   asteroid/  lander/
+│  ├─ gomoku/ navy/    maze/     pinball/   pipe/
 │  └─ 每个都是 @arcade/game-<id>，meta.ts 轻量，index.ts 懒加载
 ├─ scripts/
 │  ├─ check-games.mjs        # 清单自检
@@ -141,8 +158,10 @@ DEPLOY_HOST=96.47.231.250 DEPLOY_USER=root DEPLOY_KEY=/path/to/vps_deploy_key no
 │  └─ smoke.mjs              # 无头 Chrome 冒烟 + 截图
 ├─ docs/
 │  ├─ GAME_API.md            # 游戏开发契约
+│  ├─ game-dev-card.md       # 新游戏速查卡（并行开发时子代理只读这份）
 │  ├─ game-specs.md          # VOL. 01 十款游戏的玩法规格
-│  └─ game-specs-vol02.md    # VOL. 02 十款新游戏的玩法规格
+│  ├─ game-specs-vol02.md    # VOL. 02 十款新游戏的玩法规格
+│  └─ game-specs-vol03.md    # VOL. 03 十款新游戏的玩法规格
 ├─ Dockerfile / docker-compose.yml / docker/nginx.conf
 └─ vite.config.ts / vite.standalone.config.ts
 ```
@@ -157,7 +176,7 @@ DEPLOY_HOST=96.47.231.250 DEPLOY_USER=root DEPLOY_KEY=/path/to/vps_deploy_key no
    收集卡片，`site/play.ts` 用 `import.meta.glob('../games/*/src/index.ts')` 懒加载玩法。
    新增游戏不需要改任何公共文件。
 4. **按需拆包**。每个游戏编译成 `assets/js/game-<id>-index-<hash>.js` 独立 chunk，
-   进哪个游戏才下载哪个；首页只加载 20 份轻量 meta。
+   进哪个游戏才下载哪个；首页只加载 30 份轻量 meta。
 
 新增游戏：读 `docs/GAME_API.md`，复制 `games/whack/` 的结构，
 在 `packages/registry/slots.json` 里占一个机位即可。
@@ -172,7 +191,7 @@ DEPLOY_HOST=96.47.231.250 DEPLOY_USER=root DEPLOY_KEY=/path/to/vps_deploy_key no
 
 每款游戏在 `meta.ts` 里声明 `pad`，壳层统一画 D-pad、A/B、START：
 
-- 所有 20 款游戏都有手柄布局；没有操作的键不会显示。
+- 所有 30 款游戏都有手柄布局；没有操作的键不会显示。
 - DOM 按钮，天生支持多指（比如俄罗斯方块一边按住左、一边点旋转）。
 - 同一动作被两个键按住时用计数处理，不会提前松开。
 - Android 用 `navigator.vibrate` 给短振动；iOS 用极短的 WebAudio 按键音。
@@ -199,9 +218,9 @@ DEPLOY_HOST=96.47.231.250 DEPLOY_USER=root DEPLOY_KEY=/path/to/vps_deploy_key no
 ## 测试
 
 ```bash
-npm test                       # 引擎与各游戏纯逻辑单测（300+ 条）
+npm test                       # 引擎与各游戏纯逻辑单测（835 条）
 npm run build && npm run preview
-node scripts/smoke.mjs         # 无头 Chrome：逐个打开 20 个游戏，检查报错/尺寸/HUD/手柄并截图
+node scripts/smoke.mjs         # 无头 Chrome：逐个打开 30 个游戏，检查报错/尺寸/HUD/手柄并截图
 ```
 
 冒烟脚本输出到 `.artifacts/smoke/`：每个游戏的 `ready` 与 `play` 截图，

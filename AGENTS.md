@@ -5,7 +5,7 @@
 
 ## 这是什么
 
-像素街机小游戏合集：20 款 Canvas 小游戏，纯静态产物。
+像素街机小游戏合集：30 款 Canvas 小游戏，纯静态产物。
 零外部素材（画面全是 Canvas 像素画、音效全是 WebAudio 现场合成）、零运行时框架。
 
 - 技术栈：TypeScript 5.9 · Vite 7 · Vitest 3 · 原生 Canvas 2D
@@ -16,8 +16,8 @@
 
 | 你要做什么 | 读这个 |
 |---|---|
-| 写一款新游戏 | [`docs/GAME_API.md`](docs/GAME_API.md) —— 引擎契约，**必读** |
-| 看已有玩法规格 | [`docs/game-specs.md`](docs/game-specs.md)（VOL.01）、[`docs/game-specs-vol02.md`](docs/game-specs-vol02.md)（VOL.02） |
+| 写一款新游戏 | [`docs/game-dev-card.md`](docs/game-dev-card.md) —— **速查卡，先读这份**；完整契约见 [`docs/GAME_API.md`](docs/GAME_API.md) |
+| 看已有玩法规格 | [`docs/game-specs.md`](docs/game-specs.md)（VOL.01）、[`docs/game-specs-vol02.md`](docs/game-specs-vol02.md)（VOL.02）、[`docs/game-specs-vol03.md`](docs/game-specs-vol03.md)（VOL.03） |
 | 改部署/CI | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
 | 参考实现 | `games/mines/`（网格+光标+低分模式）、`games/whack/`（反应类） |
 
@@ -39,7 +39,7 @@ import.meta.glob<{ meta: GameMeta }>("../games/*/src/index.ts")
 - 每个游戏编译成 `assets/js/game-<id>-index-<hash>.js` 独立 chunk（由
   [`vite.config.ts`](vite.config.ts) 的 `chunkFileNames` 按路径正则决定）——
   **改这个正则会破坏 `check:games` 的产物校验**。
-- 进哪个游戏才下载哪个；首页只加载 20 份轻量 `meta.ts`。
+- 进哪个游戏才下载哪个；首页只加载 30 份轻量 `meta.ts`。
 
 ## 二、加一款新游戏的完整清单
 
@@ -189,13 +189,13 @@ HUD 数值要 clamp 到位数，否则会撑破布局。
 
 [`bundle-budget.json`](bundle-budget.json) 是硬上限，`npm run ci:bundle` 超了就失败：
 
-| 指标 | 当前阈值 | 实测（20 款） |
+| 指标 | 当前阈值 | 实测（30 款） |
 |---|---|---|
-| JS (gzip) | ≤ 150 KB | 123.7 KB |
+| JS (gzip) | ≤ 200 KB | 178 KB |
 | CSS (gzip) | ≤ 22 KB | 11.9 KB |
-| 全部产物 | ≤ 400 KB | 349.3 KB |
-| 单文件离线版 | ≤ 400 KB | 320.2 KB |
-| 游戏独立 chunk | ≥ 20 个 | 20 个 |
+| 全部产物 | ≤ 520 KB | 462.4 KB |
+| 单文件离线版 | ≤ 500 KB | 427 KB |
+| 游戏独立 chunk | ≥ 30 个 | 30 个 |
 
 单款游戏平均约 5–6 KB raw。加游戏后按比例上调 `gameChunksMin` 与其它阈值，
 但**不要把阈值一次性拉到很高**——它存在就是为了拦住误引入大依赖。
@@ -206,7 +206,7 @@ HUD 数值要 clamp 到位数，否则会撑破布局。
 npm install              # 装依赖（worktree 里第一次需要）
 npm run dev              # http://localhost:5173
 npm run typecheck        # tsc --noEmit
-npm test                 # vitest 全量（当前 510 条）
+npm test                 # vitest 全量（当前 835 条）
 npm run build            # typecheck + vite build + 预压缩 → dist/
 npm run build:all        # 上面 + 离线单文件版 → dist-standalone/
 npm run check:games      # 机位清单 + 产物 chunk 校验
@@ -219,7 +219,7 @@ npm run ci:bundle        # 体积预算
 
 ```bash
 npm run preview                  # 终端 A：http://localhost:4173
-node scripts/smoke.mjs           # 终端 B：全部 20 款
+node scripts/smoke.mjs           # 终端 B：全部 30 款
 node scripts/smoke.mjs whack     # 只跑指定几款
 ```
 
@@ -249,3 +249,29 @@ node scripts/smoke.mjs whack     # 只跑指定几款
   0.60–0.71。改这个值前先看 `games/hoop/src/logic.ts` 的注释。
 - **`pong` 的 `logic.ts` 注释曾经损坏过**，已修复；若再次出现非法 UTF-8，
   按全局准则第四节的方法处理（剥注释比对代码，证明只改注释）。
+
+### VOL.03 的已知偏离（都是规格自身矛盾，子代理独立发现后由主 agent 复核批准）
+
+- **`bubble` 蜂窝水平居中**：规格 `x = 8 + col*16 + (row%2)*8` 是按 136 宽推的，
+  画布固定 168 时照抄会让右边留 40px，炮台移到 x=160 就完全落空。
+  已改为 `ORIGIN_X = 28` 居中，行高 / 列距 / 奇偶偏移保持原值，并用单测钉住左右留白对称。
+- **`maze` 的 `ORIGIN` 是 (6, 15)**：同一节同时要求「棋盘 156×180」与「垂直居中」，
+  高 210 时居中偏移只能是 `(210-180)/2 = 15`，规格写 (6,6) 是笔误。
+- **`pipe` 只打乱内部格、边界格保持正确朝向**：规格允许死路，但死路永远无法注满，
+  会让「100% 注水通关」这个胜利条件**永不可达**。实测按规格打乱边界，
+  60 关里只有 3 关可解。现在保证任何旋转中间态都不漏水，120 关全部可解，
+  最优解 36–73 步（上限 80）。
+- **`pipe` 用汉密尔顿一笔画生成通道**（而非 DFS + 随机填充），理由同上条：
+  DFS 必然留下永远注不满的死格。
+- **`asteroid` 的 `shipVelocity` 多一个可选参数 `current`**：规格要求「不推进时保持原速」，
+  但原签名无法表达当前速度，二者必须同时成立。旧调用完全兼容。
+- **`lander` 燃料每段下降重置**：规格只说「燃料 100」，未定义单局是单次还是多次下降。
+  做成多段连打，燃料加成衡量每段效率。
+- **`frog` 上下跳跃保持当前 x**（不吸附格心），否则河面踩浮木没有连续手感。
+- **`rhythm` 方向键→轨道映射**：规格只说"对应 0/1/2/3"，实现取
+  left=0 / down=1 / up=2 / right=3（d-pad 物理左到右）。
+
+**`pinball` 的物理常量已由主 agent 预先仿真，不要改**：`GRAVITY = 150` 让自由落体末速
+（251px/s）刚好低于速度上限（260），球不会长期贴上限；`SUB_STEP_MS = 4` 让满速单子步
+位移 1.04px < 球半径 4px，用整帧 50ms 不分子步会位移 13px 直接穿过 5px 挡板。
+挡板必须按**线段**做点—线段最近点碰撞，不是圆。

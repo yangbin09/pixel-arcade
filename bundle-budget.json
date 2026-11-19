@@ -1,7 +1,7 @@
 {
-  "jsGzipKB": 150,
+  "jsGzipKB": 200,
   "cssGzipKB": 22,
-  "totalRawKB": 400,
-  "standaloneKB": 400,
-  "gameChunksMin": 20
+  "totalRawKB": 520,
+  "standaloneKB": 500,
+  "gameChunksMin": 30
 }
