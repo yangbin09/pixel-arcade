@@ -116,7 +116,7 @@ jobs:
         with:
           name: site-dist
           path: .
-      - name: Smoke test (preview + 10 games)
+      - name: Smoke test (preview + 20 games)
         run: node scripts/ci/smoke-preview.mjs
       - name: Upload smoke report
         if: always()

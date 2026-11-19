@@ -17,7 +17,7 @@ games/<id>/
 - `../games/*/src/index.ts` → `play/?game=<id>` 懒加载
 
 **不要修改** `packages/`、`site/`、`index.html`、`play/`、`vite.config.ts`、`slots.json`。
-新游戏只需要新增自己的目录，编号/顺序由 `packages/registry/slots.json` 决定（已列好 10 个 id）。
+新游戏只需要新增自己的目录，编号/顺序由 `packages/registry/slots.json` 决定（已列好 20 个 id）。
 
 ## 最小可用示例
 

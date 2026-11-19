@@ -8,5 +8,15 @@
   { "no": 7, "id": "memory" },
   { "no": 8, "id": "dodge" },
   { "no": 9, "id": "tiles" },
-  { "no": 10, "id": "mines" }
+  { "no": 10, "id": "mines" },
+  { "no": 11, "id": "runner" },
+  { "no": 12, "id": "othello" },
+  { "no": 13, "id": "lights" },
+  { "no": 14, "id": "stack" },
+  { "no": 15, "id": "simon" },
+  { "no": 16, "id": "hoop" },
+  { "no": 17, "id": "sokoban" },
+  { "no": 18, "id": "hop" },
+  { "no": 19, "id": "claw" },
+  { "no": 20, "id": "pong" }
 ]

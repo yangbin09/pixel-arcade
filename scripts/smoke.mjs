@@ -37,6 +37,16 @@ const ALL = [
   "dodge",
   "tiles",
   "mines",
+  "runner",
+  "othello",
+  "lights",
+  "stack",
+  "simon",
+  "hoop",
+  "sokoban",
+  "hop",
+  "claw",
+  "pong",
 ];
 const ids = process.argv.slice(2).length ? process.argv.slice(2) : ALL;
 
@@ -478,8 +488,8 @@ try {
   // CI 校验：首页卡片齐全、每局都能点开始并进入 playing、控制台无错误。
   const failures = [];
   const homeReport = report.find((entry) => entry.page === "home");
-  if (!homeReport || homeReport.cards < 10) {
-    failures.push(`首页游戏卡片不足：${homeReport?.cards ?? 0}/10`);
+  if (!homeReport || homeReport.cards < ALL.length) {
+    failures.push(`首页游戏卡片不足：${homeReport?.cards ?? 0}/${ALL.length}`);
   }
   for (const entry of report) {
     if (!entry.game) continue;

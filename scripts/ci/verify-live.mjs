@@ -1,6 +1,6 @@
 /**
  * 线上站点功能验证（CDP + 无头 Chrome）：
- * 首页 10 张卡片、10 款游戏都能进入 playing、控制台与资源请求无错误。
+ * 首页 20 张卡片、20 款游戏都能进入 playing、控制台与资源请求无错误。
  *
  * 用法：
  *   BASE_URL=https://pixel-arcade.appwrite.network node scripts/ci/verify-live.mjs
@@ -17,7 +17,12 @@ if (!BASE) {
   process.exit(1);
 }
 
-const GAMES = ["whack", "snake", "breakout", "invaders", "blocks", "merge", "memory", "dodge", "tiles", "mines"];
+const GAMES = [
+  "whack", "snake", "breakout", "invaders", "blocks",
+  "merge", "memory", "dodge", "tiles", "mines",
+  "runner", "othello", "lights", "stack", "simon",
+  "hoop", "sokoban", "hop", "claw", "pong",
+];
 const PORT = Number(process.env.CDP_PORT ?? 9361);
 const OUT = resolve(process.cwd(), ".artifacts/verify-live");
 const PROFILE = resolve(process.cwd(), ".artifacts/chrome-profile-verify");
@@ -194,7 +199,7 @@ try {
 
   // ---------------- 首页 ----------------
   await client.send("Page.navigate", { url: `${BASE}/` });
-  const homeOk = await waitFor(client, `document.querySelectorAll('.game-grid > li').length >= 10`, 20_000);
+  const homeOk = await waitFor(client, `document.querySelectorAll('.game-grid > li').length >= 20`, 20_000);
   const home = await evaluate(
     client,
     `(() => ({
@@ -207,7 +212,7 @@ try {
   console.log(
     `home      cards=${home.cards} thumbs=${home.thumbs} title=${JSON.stringify(home.title)} errors=${client.errors.length}`,
   );
-  if (!homeOk || home.cards < 10 || home.thumbs < 10) exitCode = 1;
+  if (!homeOk || home.cards < 20 || home.thumbs < 20) exitCode = 1;
   client.errors.length = 0;
 
   if (SHOTS) {
@@ -215,7 +220,7 @@ try {
     writeFileSync(resolve(OUT, "home.png"), Buffer.from(shot.data, "base64"));
   }
 
-  // ---------------- 10 款游戏 ----------------
+  // ---------------- 20 款游戏 ----------------
   for (const id of GAMES) {
     client.errors.length = 0;
     await client.send("Page.navigate", { url: `${BASE}/play/?game=${id}` });

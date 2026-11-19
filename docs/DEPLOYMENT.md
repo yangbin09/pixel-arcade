@@ -50,7 +50,7 @@ push / PR
 | `unit` | `vitest` 分 2 shard 并行 | changes | 失败互不阻塞（`fail-fast: false`） |
 | `build` | 复用 `reusable-build-site.yml` | changes | 产出 `site-dist` artifact |
 | `games-check` | 机位清单 + 每款游戏独立 chunk | build | 校验构建产物完整性 |
-| `smoke` | `vite preview` + 无头 Chrome 跑 10 款游戏 | build | 控制台错误 / 未进入 playing 即失败 |
+| `smoke` | `vite preview` + 无头 Chrome 跑 20 款游戏 | build | 控制台错误 / 未进入 playing 即失败 |
 | `bundle` | gzip 体积预算（`bundle-budget.json`） | build | 防止误引入大依赖 |
 | `image` | 复用 `reusable-build-image.yml` | changes | 验证 Dockerfile，导出镜像 artifact |
 | `audit` | `npm audit --audit-level=high` | changes | 仅提示，不参与门禁 |
