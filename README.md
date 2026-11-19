@@ -83,8 +83,10 @@ GitHub Actions 全自动流水线，详细设计/密钥/回滚手册见 [docs/DE
 
 - **CI**：路径过滤 → typecheck → 单测（2 shard）→ 构建 → 游戏清单 → 无头 Chrome 冒烟 → 体积预算 → Dockerfile 校验 → 门禁
 - **Deploy Appwrite** / **Deploy VPS**：`master` 上 CI 成功后各自独立触发（也可手动 `workflow_dispatch` 指定任意 commit）
-- **Verify live**：每日定时 + 手动，无头 Chrome 验证两个线上目标
+- **Verify live**：每日定时 + 手动，无头 Chrome 验证两个线上目标；失败自动开 GitHub Issue，恢复后自动关闭
 - **Release**：推 `v*` tag 时自动产出 `pixel-arcade-site.zip`、单文件离线版和 SHA256
+
+仓库为 public，`master` 已开分支保护（禁止 force push / 删分支，PR 合并需通过 `CI gate`）。
 
 手动发布 / 回滚：
 
@@ -105,10 +107,10 @@ npm run ci:smoke     # vite preview + 无头 Chrome 冒烟
 npm run ci:verify    # 需要 BASE_URL，验证线上站点
 ```
 
-旧的本地手工部署脚本仍保留（基于 root 密码 + 服务器上构建），仅应急用：
+旧的本地手工部署脚本仍保留（在服务器上构建，仅应急用）。服务器已关闭 SSH 密码登录，使用部署私钥：
 
 ```bash
-DEPLOY_HOST=<ip> DEPLOY_USER=root DEPLOY_PASSWORD=<password> node scripts/deploy.mjs deploy
+DEPLOY_HOST=96.47.231.250 DEPLOY_USER=root DEPLOY_KEY=/path/to/vps_deploy_key node scripts/deploy.mjs deploy
 ```
 
 ---

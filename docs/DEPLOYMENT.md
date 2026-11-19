@@ -97,6 +97,8 @@ SSH 使用专用 ed25519 部署密钥（`restrict` 前缀，只允许执行命�
 
 每天 03:17 UTC（北京时间 11:17）分别对 Appwrite 与 VPS 跑一遍无头 Chrome 功能验证；两个 job 互相独立。也可手动 `workflow_dispatch`。
 
+巡检失败会自动创建/更新 GitHub Issue（标题：`线上巡检失败（Appwrite / VPS）`）；下一次巡检成功后自动关闭该 issue。两个部署流水线同样会在失败时开 `部署失败（Appwrite/VPS）` issue，成功部署后自动关闭。
+
 ### 7. `release.yml` —— 版本发布（tag）
 
 推 `v*` tag 时构建并发布 GitHub Release 资产：
@@ -116,7 +118,7 @@ SSH 使用专用 ed25519 部署密钥（`restrict` 前缀，只允许执行命�
 
 ## 首次配置（已完成，供复现/重建参考）
 
-仓库：<https://github.com/yangbin09/pixel-arcade>（private）
+仓库：<https://github.com/yangbin09/pixel-arcade>（public；`master` 已开分支保护）
 
 ### 仓库变量（Settings → Variables）
 
@@ -279,12 +281,13 @@ ssh root@96.47.231.250 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-ava
 
 ## 安全边界
 
-- 仓库是 private；仓库内**不含**任何密码/私钥/API Key。
-- Appwrite API Key 仅 `sites.read` + `sites.write`，只能发布站点，不能删站点、不能碰数据库/用户/存储。
-- VPS 使用**专用**部署密钥（不是 root 密码），`authorized_keys` 里带 `restrict` 选项；主机的 `authorized_keys` 不保存 CI 之外的密钥。
+- 仓库是 public；仓库内**不含**任何密码/私钥/API Key（已对全部 git 历史做过扫描）。
+- `master` 已开分支保护：禁止 force push 与删除分支；合并 PR 必须通过 `CI gate`（管理员可绕过，便于紧急修复）。
+- Appwrite API Key 仅 `sites.read` + `sites.write`，只能发布站点，不能删站点、不能碰数据库/用户/存储；有效期 1 年（到期前按上文轮换）。
+- VPS 使用**专用**部署密钥（`authorized_keys` 里带 `restrict` 选项），并且**已关闭 root 密码登录**：`PermitRootLogin prohibit-password`、`PasswordAuthentication no`（drop-in：`/etc/ssh/sshd_config.d/00-pixel-arcade-hardening.conf`，配置备份在服务器 `/root/sshd-backup-*`）。
 - 主机指纹在 workflow 变量中锁定，SSH 客户端会校验，防中间人。
-- GitHub Environment `production-*` 可按需加 required reviewers / 分支保护，把「发布需要审批」作为下一步加固项。
-- VPS 的 root 密码登录仍然开启（历史遗留），建议后续改为只允许密钥登录；本次为降低风险，CI 不复用 root 密码。
+- GitHub Environment `production-*` 目前未启用审批规则（public 仓库已具备条件）；需要「发布需人工审批」时，在仓库 Settings → Environments 给两个环境加 required reviewers 即可。
+- VPS 救援入口：DediRock 面板 VNC 控制台。本地应急部署使用 `.artifacts/gh-setup/vps_deploy_key`（gitignored）或从 CI 重新轮换密钥。
 
 ## 故障排查
 
@@ -295,8 +298,22 @@ ssh root@96.47.231.250 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-ava
 | VPS deploy 报 SSH 认证失败 | `VPS_SSH_KEY` 换行是否完整；服务器 `/root/.ssh/authorized_keys` 是否有 `restrict` 公钥；`fail2ban` 是否封了 runner IP（`fail2ban-client status sshd`） |
 | VPS 部署后 502 | 容器健康检查是否通过：`ssh ... 'docker ps; docker logs --tail 100 pixel-arcade'` |
 | 无头 Chrome 找不到 | 脚本支持 `CHROME_PATH` 覆盖；ubuntu-latest 自带 `google-chrome` |
+| 偶发 `Chrome DevTools 没有启动` | 脚本已内置 45s 启动等待 + stderr 诊断；偶发冷启动慢直接 rerun 失败 job；持续失败时检查 runner 上 `google-chrome --version` 是否可执行 |
+| SSH 密码登录被拒绝 | 服务器已关闭密码登录，只允许部署密钥；本地手工部署改用 `DEPLOY_KEY=... node scripts/deploy.mjs deploy`，救援走 DediRock 面板 VNC 控制台 |
 | 冒烟失败但本地正常 | CI 是 `SMOKE_STRICT=1`（控制台错误也算失败），看 action 里的 `smoke-report` artifact |
 | `workflow_run` 部署没触发 | 只有 CI 在 `master` 上 `conclusion=success` 才触发；PR 不会触发部署 |
+
+## 上线验证记录
+
+2026-11-18 首次接入完成后的实测结果：
+
+| 链路 / 节点 | 结果 |
+| --- | --- |
+| CI 门禁（路径过滤 → typecheck → 单测 203 项分 2 shard → 双产物构建 → 游戏清单 → 无头冒烟 → 体积预算 → 镜像 → gate） | ✅ 全绿 |
+| Appwrite 发布（构建 → 上传部署 → 激活 → 线上验证） | ✅ 部署 `ready`，线上 10/10 游戏可玩、0 控制台错误 |
+| VPS 发布（镜像构建 → SSH 上传 → 容器重启/健康检查 → nginx 反代 → 线上验证） | ✅ 部署成功，容器 healthy，线上 10/10 游戏可玩、0 控制台错误 |
+| 定时巡检（verify-live.yml） | ✅ 两个目标 job 独立可手动触发，已排定每日 11:17（北京时间）自动运行 |
+| Release（v* tag → 构建 + GitHub Release 资产） | ✅ `v1.0.0` 已验证（site.zip / 单文件离线版 / SHA256SUMS） |
 
 ## 相关文件
 

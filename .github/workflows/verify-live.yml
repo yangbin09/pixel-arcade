@@ -21,14 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify in headless Chrome
         env:
           BASE_URL: ${{ vars.APPWRITE_SITE_URL }}
         run: node scripts/ci/verify-live.mjs
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: verify-appwrite-scheduled
           path: .artifacts/verify-live
@@ -40,16 +40,54 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify in headless Chrome
         env:
           BASE_URL: ${{ vars.VPS_SITE_URL }}
         run: node scripts/ci/verify-live.mjs
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: verify-vps-scheduled
           path: .artifacts/verify-live
           if-no-files-found: ignore
           retention-days: 7
+
+  notify:
+    name: Open ops alert
+    needs: [appwrite, vps]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create or update issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALERT_TITLE: 线上巡检失败（Appwrite / VPS）
+          ALERT_MODE: open
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
+        run: node scripts/ci/notify-alert.mjs
+
+  close-alert:
+    name: Close ops alert
+    needs: [appwrite, vps]
+    if: success()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Close issue if any
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALERT_TITLE: 线上巡检失败（Appwrite / VPS）
+          ALERT_MODE: close
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/ci/notify-alert.mjs
