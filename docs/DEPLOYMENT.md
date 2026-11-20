@@ -22,7 +22,7 @@ push / PR
 │   ↓ site-dist     │   │   ↓ docker-image          │
 │ Appwrite Sites API│   │ SSH: docker load + 重启   │
 │   ↓               │   │   + 健康检查 / 自动回滚   │
-│ 无头 Chrome 验证  │   │   + nginx 反代热更新      │
+│ 无头 Chrome 验证  │   │   + 反代自检/热更新      │
 └───────────────────┘   └───────────────────────────┘
         │                        │
         └────────┬───────────────┘
@@ -35,7 +35,7 @@ push / PR
 | 目标 | 地址 | 形态 |
 | --- | --- | --- |
 | Appwrite Sites（CDN） | <https://pixel-arcade.appwrite.network> | 静态产物直传，Appwrite 边缘分发 |
-| VPS | <https://96-47-231-250.sslip.io> | Docker 容器（nginx:alpine）+ 宿主 nginx 反代 + Let's Encrypt TLS |
+| VPS | <https://96-47-231-250.sslip.io> | Docker 容器（nginx:alpine，127.0.0.1:8080）+ 1Panel OpenResty 反代（1Panel「网站」管理）+ Let's Encrypt TLS |
 
 两个目标内容完全一致，都是同一个 `dist/` 构建产物；但发布链路完全独立，任一失败不影响另一个。
 
@@ -84,13 +84,24 @@ push / PR
 
 部署脚本：`scripts/ci/deploy-vps.mjs`：
 
-1. SFTP 上传 `pixel-arcade-image.tar.gz` 与 `deploy/games-site.conf`；
+1. SFTP 上传 `pixel-arcade-image.tar.gz`（`deploy/games-site.conf` 仅宿主 nginx 模式需要）；
 2. 服务器 `docker load`，把当前 `pixel-arcade:latest` 打成 `pixel-arcade:rollback` 备份；
 3. `docker rm -f` 旧容器，按固定参数启动新容器（`--read-only` + tmpfs + `no-new-privileges`）；
 4. `/healthz` 健康检查失败 → 自动用 `pixel-arcade:rollback` 重启并退出；
-5. 更新 `/etc/nginx/sites-available/games.conf`（先备份到 `/root/games.conf.bak.<时间戳>`），`nginx -t` 失败自动恢复；
-6. 通过宿主 nginx 自检 `http://127.0.0.1/healthz` 与 HTTPS；
+5. **反代按模式自动处理**（2026-11-20 起生产为 1Panel OpenResty 模式）：
+   - 1Panel OpenResty 模式（80/443 由 `1Panel-openresty-*` 容器承载）：跳过宿主 nginx 配置更新，只做 `openresty -t` + reload；
+   - 宿主 nginx 模式（兼容旧环境，`nginx` 为 active 时）：更新 `/etc/nginx/sites-available/games.conf`（先备份），`nginx -t` 失败自动恢复；
+6. 通过反向代理自检 `http://127.0.0.1/healthz` 与 `https://<VPS_SITE_HOST>/healthz`；
 7. Action 侧再对公网 `https://<VPS_SITE_HOST>/` 做一次 HTTP 自检。
+
+> **VPS 反代与证书现状（2026-11-20 迁移后）**
+>
+> - 80/443 由 1Panel 应用商店安装的 **OpenResty 1.31.8.1**（`host` 网络，容器名 `1Panel-openresty-*`）承载；
+> - 站点以 1Panel「网站 → 反向代理」管理：`96-47-231-250.sslip.io` → `http://127.0.0.1:8080`，HTTPS 由 1Panel 网站配置管理；
+> - 宿主 nginx 已停止并禁用（配置备份在 `/root/nginx-before-openresty-<时间戳>/`），仅保留作回滚；
+> - 证书仍由 certbot 管理，认证方式为 **webroot**（`/opt/1panel/apps/openresty/openresty/root`），续期后由 deploy hook
+>   `/etc/letsencrypt/renewal-hooks/deploy/1panel-panel-ssl.sh` 自动同步到 1Panel 网站证书目录与面板证书，
+>   并热加载 OpenResty / 面板 TLS（日志 `/var/log/1panel-ssl-sync.log`）。
 
 SSH 使用专用 ed25519 部署密钥（`restrict` 前缀，只允许执行命令，禁止端口转发/agent 转发），并强制校验主机指纹。
 
@@ -273,12 +284,15 @@ ssh root@96.47.231.250 'docker rm -f pixel-arcade && \
     --tmpfs /var/cache/nginx --tmpfs /var/run \
     --security-opt no-new-privileges:true pixel-arcade:rollback'
 
-# 方式 3：恢复上一次 nginx 反代配置
-ssh root@96.47.231.250 'ls -1 /root/games.conf.bak.* | tail -1'
-ssh root@96.47.231.250 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-available/games.conf && nginx -t && systemctl reload nginx'
+# 方式 3：回滚/调整反向代理（2026-11-20 起为 1Panel OpenResty 模式）
+# 3.1 普通调整：1Panel →「网站」→ pixel-arcade →「配置」修改反代/证书（立即生效）
+# 3.2 紧急下线该站：1Panel →「网站」→ 停止；或应用商店 → openresty → 停止（80/443 全部下线）
+# 3.3 回退到旧宿主 nginx：先停 openresty 应用，再 systemctl enable --now nginx
+#     （旧配置仍在 /etc/nginx/sites-available/games.conf，配置备份 /root/nginx-before-openresty-*）
 ```
 
-`deploy-vps.mjs` 在健康检查失败时会**自动**执行方式 2；nginx `-t` 失败时会自动恢复备份，不需要人工介入。
+`deploy-vps.mjs` 在健康检查失败时会**自动**执行方式 2；1Panel OpenResty 模式下不再改宿主 nginx 配置，因此不会出现 `NGINX_RESTORED`。
+若证书续期方式需要临时改回 nginx 插件：确认宿主 nginx 已恢复后，编辑 `/etc/letsencrypt/renewal/96-47-231-250.sslip.io.conf` 改回 `authenticator = nginx` 并恢复 `installer = nginx`。
 
 ## 安全边界
 
@@ -313,9 +327,19 @@ ssh root@96.47.231.250 'cp /root/games.conf.bak.<时间戳> /etc/nginx/sites-ava
 | --- | --- |
 | CI 门禁（路径过滤 → typecheck → 单测 203 项分 2 shard → 双产物构建 → 游戏清单 → 无头冒烟 → 体积预算 → 镜像 → gate） | ✅ 全绿 |
 | Appwrite 发布（构建 → 上传部署 → 激活 → 线上验证） | ✅ 部署 `ready`，线上 10/10 游戏可玩、0 控制台错误 |
-| VPS 发布（镜像构建 → SSH 上传 → 容器重启/健康检查 → nginx 反代 → 线上验证） | ✅ 部署成功，容器 healthy，线上 10/10 游戏可玩、0 控制台错误 |
+| VPS 发布（镜像构建 → SSH 上传 → 容器重启/健康检查 → 反代自检 → 线上验证） | ✅ 部署成功，容器 healthy，线上 10/10 游戏可玩、0 控制台错误 |
 | 定时巡检（verify-live.yml） | ✅ 两个目标 job 独立可手动触发，已排定每日 11:17（北京时间）自动运行 |
 | Release（v* tag → 构建 + GitHub Release 资产） | ✅ `v1.0.0` 已验证（site.zip / 单文件离线版 / SHA256SUMS） |
+
+2026-11-20 迁移到 1Panel OpenResty 管理后的实测结果：
+
+| 检查项 | 结果 |
+| --- | --- |
+| 1Panel 应用商店安装 OpenResty 1.31.8.1（host 网络，80/443） | ✅ 运行中，容器 `1Panel-openresty-6wg2` |
+| 1Panel「网站 → 反向代理」：`96-47-231-250.sslip.io` → `http://127.0.0.1:8080` | ✅ 列表可见，HTTPS 已启用，证书 2027-02-18 |
+| 站点公网访问 | ✅ `https://96-47-231-250.sslip.io/` HTTP 200、证书校验通过；HTTP 301 跳 HTTPS |
+| 证书续期链路（certbot webroot + deploy hook → 网站 + 面板热加载） | ✅ 实测重新签发成功，站点/面板均立即使用新证书 |
+| 宿主 nginx | ✅ 已停止并禁用（配置备份），现有业务无影响 |
 
 ## 相关文件
 

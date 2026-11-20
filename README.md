@@ -92,7 +92,7 @@ GitHub Actions 全自动流水线，详细设计/密钥/回滚手册见 [docs/DE
 | 目标 | 地址 | 形态 |
 | --- | --- | --- |
 | Appwrite Sites | <https://pixel-arcade.appwrite.network> | 静态产物直传 + Appwrite CDN |
-| VPS | <https://96-47-231-250.sslip.io> | Docker（nginx:alpine）+ 宿主 nginx + TLS |
+| VPS | <https://96-47-231-250.sslip.io> | Docker（nginx:alpine）+ 1Panel OpenResty 反代 + TLS |
 
 流水线（节点解耦，两条发布链路互不影响）：
 

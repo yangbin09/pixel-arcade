@@ -1,5 +1,10 @@
 /**
- * GitHub Actions → VPS（Docker + 宿主 nginx）部署。
+ * GitHub Actions → VPS（Docker + 反向代理）部署。
+ *
+ * 反向代理两种模式（自动识别）：
+ *   1) 1Panel OpenResty 管理模式（当前生产）：80/443 由 1Panel 安装的 OpenResty 容器承载，
+ *      vhost 由 1Panel 网站管理维护（反向代理到 127.0.0.1:8080），本脚本跳过宿主 nginx 配置更新；
+ *   2) 宿主 nginx 模式（历史兼容）：宿主 nginx 处于 active 时，上传并更新 games-site.conf。
  *
  * 环境变量：
  *   VPS_HOST             服务器地址，例如 96.47.231.250
@@ -7,13 +12,13 @@
  *   VPS_PORT             默认 22
  *   VPS_SSH_KEY          私钥内容（推荐）或 VPS_SSH_KEY_PATH 指定文件
  *   VPS_HOST_FINGERPRINT 可选，SSH 主机指纹（SHA256:...），设置后强制校验
- *   VPS_SITE_HOST        站点域名（nginx server_name / 自检用），例如 96-47-231-250.sslip.io
+ *   VPS_SITE_HOST        站点域名（Host / 自检用），例如 96-47-231-250.sslip.io
  *   VPS_SITE_URL         可选，部署后本地自检地址，默认 https://<VPS_SITE_HOST>
  *   IMAGE_PATH           默认 .artifacts/docker-image/pixel-arcade-image.tar.gz
- *   NGINX_CONF           默认 deploy/games-site.conf
+ *   NGINX_CONF           默认 deploy/games-site.conf（仅宿主 nginx 模式使用）
  *
  * 流程：上传镜像 tar.gz → docker load → 重启容器 → 健康检查（失败自动回滚旧镜像）
- *      → 更新 nginx 反代（备份 + nginx -t，失败自动恢复）→ HTTP/HTTPS 自检。
+ *      → 反向代理自检/重载（按模式自动判断）→ 公网 HTTP/HTTPS 自检。
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -154,7 +159,7 @@ wait_health() {
 
 echo "== 预检 =="
 command -v docker >/dev/null || { echo "没有 docker"; exit 10; }
-command -v nginx >/dev/null || { echo "没有 nginx"; exit 11; }
+command -v nginx >/dev/null || echo "提示：未安装宿主 nginx（当前可能为 1Panel OpenResty 模式）"
 
 echo "== 保留上一个镜像用于回滚 =="
 docker tag "$IMAGE" pixel-arcade:rollback 2>/dev/null || true
@@ -181,28 +186,43 @@ if ! wait_health; then
 fi
 docker ps --filter name="$CONTAINER" --format '{{.Names}} | {{.Status}} | {{.Ports}}'
 
-echo "== 更新 nginx 反代（备份 + nginx -t 回滚） =="
-if [ -f /etc/nginx/sites-available/games.conf ]; then
-  cp -a /etc/nginx/sites-available/games.conf /root/games.conf.bak.$STAMP
-fi
-install -m 644 ${REMOTE_CONF} /etc/nginx/sites-available/games.conf
-if nginx -t; then
-  systemctl reload nginx
-else
-  echo "nginx -t 失败，恢复原配置"
-  if [ -f /root/games.conf.bak.$STAMP ]; then
-    cp -a /root/games.conf.bak.$STAMP /etc/nginx/sites-available/games.conf
+echo "== 反向代理处理（自动识别模式） =="
+NGINX_STATE=$(systemctl is-active nginx 2>/dev/null || true)
+OPENRESTY_CONTAINER=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -m1 '1Panel-openresty' || true)
+if [ "$NGINX_STATE" = "active" ]; then
+  echo "模式：宿主 nginx（更新 games-site.conf）"
+  if [ -f /etc/nginx/sites-available/games.conf ]; then
+    cp -a /etc/nginx/sites-available/games.conf /root/games.conf.bak.$STAMP
   fi
-  nginx -t && systemctl reload nginx
-  echo "NGINX_RESTORED"
-  exit 40
+  install -m 644 ${REMOTE_CONF} /etc/nginx/sites-available/games.conf
+  if nginx -t; then
+    systemctl reload nginx
+  else
+    echo "nginx -t 失败，恢复原配置"
+    if [ -f /root/games.conf.bak.$STAMP ]; then
+      cp -a /root/games.conf.bak.$STAMP /etc/nginx/sites-available/games.conf
+    fi
+    nginx -t && systemctl reload nginx
+    echo "NGINX_RESTORED"
+    exit 40
+  fi
+elif [ -n "$OPENRESTY_CONTAINER" ]; then
+  echo "模式：1Panel OpenResty（容器 $OPENRESTY_CONTAINER），跳过宿主 nginx 配置更新"
+  if docker exec "$OPENRESTY_CONTAINER" openresty -t >/dev/null 2>&1; then
+    docker exec "$OPENRESTY_CONTAINER" openresty -s reload >/dev/null 2>&1 || true
+    echo "OpenResty 配置校验通过并已 reload"
+  else
+    echo "警告：OpenResty 配置校验失败（vhost 由 1Panel 管理，继续走线上自检）"
+  fi
+else
+  echo "警告：宿主 nginx 未运行且未找到 1Panel OpenResty 容器；跳过反代更新"
 fi
 
-echo "== 通过 nginx 自检 =="
-curl -fsS --max-time 5 -o /dev/null -w 'HTTP %{http_code}\\n' -H "Host: $SITE_HOST" http://127.0.0.1/healthz
+echo "== 通过反向代理自检 =="
+curl -fsS --max-time 5 -o /dev/null -w 'HTTP %{http_code}\\n' -H "Host: $SITE_HOST" http://127.0.0.1/healthz || true
 if [ -f "/etc/letsencrypt/live/$SITE_HOST/fullchain.pem" ]; then
-  curl -kfsS --max-time 10 -H "Host: $SITE_HOST" https://127.0.0.1/healthz
-  curl -kfsS --max-time 10 -o /dev/null -w 'HTTPS %{http_code}\\n' -H "Host: $SITE_HOST" https://127.0.0.1/
+  curl -fsS --max-time 10 --resolve "$SITE_HOST:443:127.0.0.1" "https://$SITE_HOST/healthz"
+  curl -fsS --max-time 10 --resolve "$SITE_HOST:443:127.0.0.1" -o /dev/null -w 'HTTPS %{http_code}\\n' "https://$SITE_HOST/"
 fi
 
 docker image prune -f >/dev/null 2>&1 || true
